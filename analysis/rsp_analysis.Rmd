@@ -1,0 +1,167 @@
+---
+title: "RSP analysis"
+author: "Katie L. Duggan DiDominic"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+## Load packages
+```{r}
+#install.packages("tidyverse")
+library(tidyverse)
+```
+
+## Load data
+```{r}
+rspdata <- read_csv(file = "/Users/u4rrnkld/OneDrive - US Army Corps of Engineers/Documents/misc/arctic_ops/rspdata.csv")
+
+cbrdata <- read_csv(file = "/Users/u4rrnkld/OneDrive - US Army Corps of Engineers/Documents/misc/arctic_ops/cbrdata.csv")
+```
+
+## Analyze
+
+### Spaghetti plots
+```{r}
+## all data
+CBR_colors <- c(
+  "CBR1" = "#B71E42",
+  "CBR2" = "#FF7F0F",
+  "CBR3" = "#32A251",
+  "CBR4" = "#2C69B0",
+  "CBR5" = "orchid")
+
+#### plot
+rspdata %>% 
+  ggplot(aes(x = rsp_index, y = depth_from_surface, group = sample_id, color = CBR_id)) +
+  geom_path(linewidth = 0.75) +
+  scale_color_manual(values = CBR_colors) +
+  facet_grid(test_area~test_id, switch = "x") +
+  scale_y_continuous(trans = "reverse") +
+  scale_x_continuous(position = "top") +
+  xlab("RSP Index") +
+  ylab("Depth from Surface (mm)") +
+  labs(color = "Corresponding\nCBR") +
+  theme_bw()
+
+## average spaghetti plot for each time point (test #)
+cbr_avg <- rspdata %>% 
+  select(c(sample_id, depth_from_surface, rsp_index)) %>% 
+  pivot_wider(names_from = sample_id, values_from = rsp_index) %>% 
+  arrange(depth_from_surface) %>% 
+  mutate(STA1_test0 = round(rowMeans(across(starts_with("STA1_test0")), na.rm=TRUE))) %>% 
+  mutate(STA2_test0 = round(rowMeans(across(starts_with("STA2_test0")), na.rm=TRUE))) %>% 
+  mutate(STA1_test1 = round(rowMeans(across(starts_with("STA1_test1")), na.rm=TRUE))) %>% 
+  mutate(STA2_test1 = round(rowMeans(across(starts_with("STA2_test1")), na.rm=TRUE))) %>%
+  mutate(STA1_test2 = round(rowMeans(across(starts_with("STA1_test2")), na.rm=TRUE))) %>% 
+  mutate(STA2_test2 = round(rowMeans(across(starts_with("STA2_test2")), na.rm=TRUE))) %>%
+  mutate(STA1_test3 = round(rowMeans(across(starts_with("STA1_test3")), na.rm=TRUE))) %>% 
+  mutate(STA2_test3 = round(rowMeans(across(starts_with("STA2_test3")), na.rm=TRUE))) %>%
+  mutate(STA1_test4 = round(rowMeans(across(starts_with("STA1_test4")), na.rm=TRUE))) %>% 
+  mutate(STA2_test4 = round(rowMeans(across(starts_with("STA2_test4")), na.rm=TRUE))) %>%
+  select(c(STA1_test0, STA2_test0, STA1_test1, STA2_test1, STA1_test2, STA2_test2, STA1_test3, STA2_test3, STA1_test4, STA2_test4, depth_from_surface)) %>% 
+  pivot_longer(cols = c(STA1_test0, STA2_test0, STA1_test1, STA2_test1, STA1_test2, STA2_test2, STA1_test3, STA2_test3, STA1_test4, STA2_test4), names_to = "station_test", values_to = "rsp_index") %>% 
+  mutate(station = substr(station_test, 1, 4)) %>% 
+  mutate(test = substr(station_test, 6, 10))
+
+#### plot
+test_colors <- c(
+  "Test 0" = "#B71E42",
+  "Test 1" = "#FF7F0F",
+  "Test 2" = "#32A251",
+  "Test 3" = "#2C69B0",
+  "Test 4" = "orchid")
+
+cbr_avg %>% 
+  mutate(test = ifelse(test == "test0", "Test 0", test)) %>% 
+  mutate(test = ifelse(test == "test1", "Test 1", test)) %>% 
+  mutate(test = ifelse(test == "test2", "Test 2", test)) %>% 
+  mutate(test = ifelse(test == "test3", "Test 3", test)) %>% 
+  mutate(test = ifelse(test == "test4", "Test 4", test)) %>% 
+  mutate(test = ifelse(test == "test5", "Test 5", test)) %>% 
+  ggplot(aes(x = rsp_index, y = depth_from_surface, group = station_test, color = test)) +
+  geom_path(linewidth = 0.75) +
+  scale_color_manual(values = test_colors) +
+  facet_grid(~station, switch = "x") +
+  scale_y_continuous(trans = "reverse") +
+  scale_x_continuous(position = "top") +
+  xlab("Average RSP Index") +
+  ylab("Depth from Surface (mm)") +
+  labs(color = "Corresponding\nCBR Timepoint") +
+  theme_bw()
+```
+
+### Filter correlation data (top 6 inches and CBRs Margie kept)
+```{r}
+## top 6 inches and CBRs that Margie kept
+surface_CBR <- rspdata %>%
+  #filter(!depth_from_surface > 150) %>% #top 6 inches (~150mm)
+  filter(!(test_area == "STA1" & test_id == "Test 0" & CBR_id == "CBR4")) %>% # remove CBR4 for STA1/test0
+  filter(!(test_area == "STA1" & test_id == "Test 1" & CBR_id == "CBR3")) %>% # remove CBR3 for STA1/test1
+  filter(!(test_area == "STA1" & test_id == "Test 1" & CBR_id == "CBR4")) %>% # remove CBR4 for STA1/test1
+  filter(!(test_area == "STA1" & test_id == "Test 2" & CBR_id == "CBR1")) %>% # remove CBR1 for STA1/test2
+  filter(!(test_area == "STA1" & test_id == "Test 3" & CBR_id == "CBR3")) %>% # remove CBR3 for STA1/test3
+  filter(!(test_area == "STA2" & test_id == "Test 2" & CBR_id == "CBR1")) # remove CBR1 for STA2/test2
+
+#### plot
+surface_CBR %>% 
+  ggplot(aes(x = rsp_index, y = depth_from_surface, group = sample_id, color = CBR_id)) +
+  geom_path(linewidth = 0.75) +
+  scale_color_manual(values = CBR_colors) +
+  facet_grid(test_area~test_id, switch = "x") +
+  scale_y_continuous(trans = "reverse", limits = c(150,0)) +
+  scale_x_continuous(position = "top") +
+  xlab("RSP Index at Surface (0-6 inches)") +
+  ylab("Depth from Surface (mm)") +
+  labs(color = "Corresponding\nCBR") +
+  theme_bw()
+
+## average for each time point (test #) in top 6 inches
+top6_avg <- surface_CBR %>% 
+  select(c(sample_id, depth_from_surface, rsp_index)) %>% 
+  pivot_wider(names_from = sample_id, values_from = rsp_index) %>% 
+  arrange(depth_from_surface) %>% 
+  mutate(STA1_test0 = round(rowMeans(across(starts_with("STA1_test0")), na.rm=TRUE))) %>% 
+  mutate(STA2_test0 = round(rowMeans(across(starts_with("STA2_test0")), na.rm=TRUE))) %>% 
+  mutate(STA1_test1 = round(rowMeans(across(starts_with("STA1_test1")), na.rm=TRUE))) %>% 
+  mutate(STA2_test1 = round(rowMeans(across(starts_with("STA2_test1")), na.rm=TRUE))) %>%
+  mutate(STA1_test2 = round(rowMeans(across(starts_with("STA1_test2")), na.rm=TRUE))) %>% 
+  mutate(STA2_test2 = round(rowMeans(across(starts_with("STA2_test2")), na.rm=TRUE))) %>%
+  mutate(STA1_test3 = round(rowMeans(across(starts_with("STA1_test3")), na.rm=TRUE))) %>% 
+  mutate(STA2_test3 = round(rowMeans(across(starts_with("STA2_test3")), na.rm=TRUE))) %>%
+  mutate(STA1_test4 = round(rowMeans(across(starts_with("STA1_test4")), na.rm=TRUE))) %>% 
+  mutate(STA2_test4 = round(rowMeans(across(starts_with("STA2_test4")), na.rm=TRUE))) %>%
+  select(c(STA1_test0, STA2_test0, STA1_test1, STA2_test1, STA1_test2, STA2_test2, STA1_test3, STA2_test3, STA1_test4, STA2_test4, depth_from_surface)) %>% 
+  pivot_longer(cols = c(STA1_test0, STA2_test0, STA1_test1, STA2_test1, STA1_test2, STA2_test2, STA1_test3, STA2_test3, STA1_test4, STA2_test4), names_to = "station_test", values_to = "rsp_index") %>% 
+  mutate(station = substr(station_test, 1, 4)) %>% 
+  mutate(test = substr(station_test, 6, 10)) %>% 
+  mutate(test = ifelse(test == "test0", "Test 0", test)) %>% 
+  mutate(test = ifelse(test == "test1", "Test 1", test)) %>% 
+  mutate(test = ifelse(test == "test2", "Test 2", test)) %>% 
+  mutate(test = ifelse(test == "test3", "Test 3", test)) %>% 
+  mutate(test = ifelse(test == "test4", "Test 4", test)) %>% 
+  mutate(test = ifelse(test == "test5", "Test 5", test))
+
+#### plot
+top6_avg %>% 
+  ggplot(aes(x = rsp_index, y = depth_from_surface, group = station_test, color = test)) +
+  geom_path(linewidth = 0.75) +
+  scale_color_manual(values = test_colors) +
+  facet_grid(~station, switch = "x") +
+  scale_y_continuous(trans = "reverse", limits = c(150,0)) +
+  scale_x_continuous(position = "top") +
+  xlab("Average RSP Index") +
+  ylab("Depth from Surface (mm)") +
+  labs(color = "Corresponding\nCBR Timepoint") +
+  theme_bw()
+
+top6_avgtotal <- top6_avg %>% #average per test and averaged across depth too
+  group_by(station_test) %>% 
+  summarize(mean_rspindex = mean(rsp_index, na.rm = TRUE))
+
+top6_avgtotal %>%
+  cbrdata
+  ggplot(aes(x = ))
+```
+
