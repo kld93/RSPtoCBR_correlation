@@ -15,9 +15,9 @@ library(tidyverse)
 
 ## Load data
 ```{r}
-rspdata <- read_csv(file = "/Users/u4rrnkld/OneDrive - US Army Corps of Engineers/Documents/misc/arctic_ops/rspdata.csv")
+rspdata <- read_csv(file = "/Users/u4rrnkld/OneDrive - US Army Corps of Engineers/Documents/RSPtoCBR_correlation/data/rspdata.csv")
 
-cbrdata <- read_csv(file = "/Users/u4rrnkld/OneDrive - US Army Corps of Engineers/Documents/misc/arctic_ops/cbrdata.csv")
+cbrdata <- read_csv(file = "/Users/u4rrnkld/OneDrive - US Army Corps of Engineers/Documents/RSPtoCBR_correlation/data/cbrdata.csv")
 ```
 
 ## Analyze
@@ -96,7 +96,7 @@ cbr_avg %>%
 ```{r}
 ## top 6 inches and CBRs that Margie kept
 surface_CBR <- rspdata %>%
-  #filter(!depth_from_surface > 150) %>% #top 6 inches (~150mm)
+  filter(!depth_from_surface > 150) %>% #top 6 inches (~150mm)
   filter(!(test_area == "STA1" & test_id == "Test 0" & CBR_id == "CBR4")) %>% # remove CBR4 for STA1/test0
   filter(!(test_area == "STA1" & test_id == "Test 1" & CBR_id == "CBR3")) %>% # remove CBR3 for STA1/test1
   filter(!(test_area == "STA1" & test_id == "Test 1" & CBR_id == "CBR4")) %>% # remove CBR4 for STA1/test1
@@ -118,7 +118,7 @@ surface_CBR %>%
   theme_bw()
 
 ## average for each time point (test #) in top 6 inches
-top6_avg <- surface_CBR %>% 
+method1 <- surface_CBR %>% 
   select(c(sample_id, depth_from_surface, rsp_index)) %>% 
   pivot_wider(names_from = sample_id, values_from = rsp_index) %>% 
   arrange(depth_from_surface) %>% 
@@ -144,24 +144,111 @@ top6_avg <- surface_CBR %>%
   mutate(test = ifelse(test == "test5", "Test 5", test))
 
 #### plot
-top6_avg %>% 
+method1 %>% 
   ggplot(aes(x = rsp_index, y = depth_from_surface, group = station_test, color = test)) +
   geom_path(linewidth = 0.75) +
   scale_color_manual(values = test_colors) +
   facet_grid(~station, switch = "x") +
   scale_y_continuous(trans = "reverse", limits = c(150,0)) +
   scale_x_continuous(position = "top") +
-  xlab("Average RSP Index") +
+  xlab("Average RSP Index at Surface (0-6 inches)") +
   ylab("Depth from Surface (mm)") +
   labs(color = "Corresponding\nCBR Timepoint") +
   theme_bw()
 
-top6_avgtotal <- top6_avg %>% #average per test and averaged across depth too
-  group_by(station_test) %>% 
-  summarize(mean_rspindex = mean(rsp_index, na.rm = TRUE))
+## method 2
+method2 <- surface_CBR %>% 
+  select(c(sample_id, depth_from_surface, rsp_index)) %>% 
+  pivot_wider(names_from = sample_id, values_from = rsp_index) %>% 
+  arrange(depth_from_surface) %>% 
+  mutate(STA1_test0_CBR1 = round(rowMeans(across(starts_with("STA1_test0_CBR1")), na.rm=TRUE))) %>% 
+  mutate(STA1_test0_CBR2 = round(rowMeans(across(starts_with("STA1_test0_CBR2")), na.rm=TRUE))) %>%
+  mutate(STA1_test0_CBR3 = round(rowMeans(across(starts_with("STA1_test0_CBR3")), na.rm=TRUE))) %>%
+  mutate(STA2_test0_CBR1 = round(rowMeans(across(starts_with("STA2_test0_CBR1")), na.rm=TRUE))) %>% 
+  mutate(STA2_test0_CBR2 = round(rowMeans(across(starts_with("STA2_test0_CBR2")), na.rm=TRUE))) %>%
+  mutate(STA2_test0_CBR3 = round(rowMeans(across(starts_with("STA2_test0_CBR3")), na.rm=TRUE))) %>%
+  mutate(STA1_test1_CBR1 = round(rowMeans(across(starts_with("STA1_test1_CBR1")), na.rm=TRUE))) %>% 
+  mutate(STA1_test1_CBR2 = round(rowMeans(across(starts_with("STA1_test1_CBR2")), na.rm=TRUE))) %>%
+  mutate(STA1_test1_CBR5 = round(rowMeans(across(starts_with("STA1_test1_CBR5")), na.rm=TRUE))) %>%
+  mutate(STA2_test1_CBR1 = round(rowMeans(across(starts_with("STA2_test1_CBR1")), na.rm=TRUE))) %>% 
+  mutate(STA2_test1_CBR2 = round(rowMeans(across(starts_with("STA2_test1_CBR2")), na.rm=TRUE))) %>%
+  mutate(STA2_test1_CBR3 = round(rowMeans(across(starts_with("STA2_test1_CBR3")), na.rm=TRUE))) %>%
+  mutate(STA1_test2_CBR2 = round(rowMeans(across(starts_with("STA1_test2_CBR2")), na.rm=TRUE))) %>% 
+  mutate(STA1_test2_CBR3 = round(rowMeans(across(starts_with("STA1_test2_CBR3")), na.rm=TRUE))) %>%
+  mutate(STA1_test2_CBR4 = round(rowMeans(across(starts_with("STA1_test2_CBR4")), na.rm=TRUE))) %>%
+  mutate(STA2_test2_CBR2 = round(rowMeans(across(starts_with("STA2_test2_CBR2")), na.rm=TRUE))) %>% 
+  mutate(STA2_test2_CBR3 = round(rowMeans(across(starts_with("STA2_test2_CBR3")), na.rm=TRUE))) %>%
+  mutate(STA2_test2_CBR4 = round(rowMeans(across(starts_with("STA2_test2_CBR4")), na.rm=TRUE))) %>%
+  mutate(STA1_test3_CBR1 = round(rowMeans(across(starts_with("STA1_test3_CBR1")), na.rm=TRUE))) %>% 
+  mutate(STA1_test3_CBR2 = round(rowMeans(across(starts_with("STA1_test3_CBR2")), na.rm=TRUE))) %>%
+  mutate(STA1_test3_CBR4 = round(rowMeans(across(starts_with("STA1_test3_CBR4")), na.rm=TRUE))) %>%
+  mutate(STA2_test3_CBR1 = round(rowMeans(across(starts_with("STA2_test3_CBR1")), na.rm=TRUE))) %>% 
+  mutate(STA2_test3_CBR2 = round(rowMeans(across(starts_with("STA2_test3_CBR2")), na.rm=TRUE))) %>%
+  mutate(STA2_test3_CBR3 = round(rowMeans(across(starts_with("STA2_test3_CBR3")), na.rm=TRUE))) %>%
+  mutate(STA1_test4_CBR1 = round(rowMeans(across(starts_with("STA1_test4_CBR1")), na.rm=TRUE))) %>% 
+  mutate(STA1_test4_CBR2 = round(rowMeans(across(starts_with("STA1_test4_CBR2")), na.rm=TRUE))) %>%
+  mutate(STA1_test4_CBR3 = round(rowMeans(across(starts_with("STA1_test4_CBR3")), na.rm=TRUE))) %>%
+  mutate(STA2_test4_CBR1 = round(rowMeans(across(starts_with("STA2_test4_CBR1")), na.rm=TRUE))) %>% 
+  mutate(STA2_test4_CBR2 = round(rowMeans(across(starts_with("STA2_test4_CBR2")), na.rm=TRUE))) %>%
+  mutate(STA2_test4_CBR3 = round(rowMeans(across(starts_with("STA2_test4_CBR3")), na.rm=TRUE))) %>%
+  select(c(STA1_test0_CBR1, STA1_test0_CBR2, STA1_test0_CBR3, STA2_test0_CBR1, STA2_test0_CBR2, STA2_test0_CBR3, STA1_test1_CBR1, STA1_test1_CBR2, STA1_test1_CBR5, STA2_test1_CBR1, STA2_test1_CBR2, STA2_test1_CBR3, STA1_test2_CBR2, STA1_test2_CBR3, STA1_test2_CBR4, STA2_test2_CBR2, STA2_test2_CBR3, STA2_test2_CBR4, STA1_test3_CBR1, STA1_test3_CBR2, STA1_test3_CBR4, STA2_test3_CBR1, STA2_test3_CBR2, STA2_test3_CBR3, STA1_test4_CBR1, STA1_test4_CBR2, STA1_test4_CBR3, STA2_test4_CBR1, STA2_test4_CBR2, STA2_test4_CBR3, depth_from_surface)) %>% 
+  pivot_longer(cols = c(STA1_test0_CBR1, STA1_test0_CBR2, STA1_test0_CBR3, STA2_test0_CBR1, STA2_test0_CBR2, STA2_test0_CBR3, STA1_test1_CBR1, STA1_test1_CBR2, STA1_test1_CBR5, STA2_test1_CBR1, STA2_test1_CBR2, STA2_test1_CBR3, STA1_test2_CBR2, STA1_test2_CBR3, STA1_test2_CBR4, STA2_test2_CBR2, STA2_test2_CBR3, STA2_test2_CBR4, STA1_test3_CBR1, STA1_test3_CBR2, STA1_test3_CBR4, STA2_test3_CBR1, STA2_test3_CBR2, STA2_test3_CBR3, STA1_test4_CBR1, STA1_test4_CBR2, STA1_test4_CBR3, STA2_test4_CBR1, STA2_test4_CBR2, STA2_test4_CBR3), names_to = "station_test_CBR", values_to = "rsp_index") %>% 
+  mutate(station = substr(station_test_CBR, 1, 4)) %>% 
+  mutate(test = substr(station_test_CBR, 6, 10)) %>% 
+  mutate(test = ifelse(test == "test0", "Test 0", test)) %>% 
+  mutate(test = ifelse(test == "test1", "Test 1", test)) %>% 
+  mutate(test = ifelse(test == "test2", "Test 2", test)) %>% 
+  mutate(test = ifelse(test == "test3", "Test 3", test)) %>% 
+  mutate(test = ifelse(test == "test4", "Test 4", test)) %>% 
+  mutate(test = ifelse(test == "test5", "Test 5", test))
 
-top6_avgtotal %>%
-  cbrdata
-  ggplot(aes(x = ))
+method2 %>% 
+  ggplot(aes(x = rsp_index, y = depth_from_surface, group = station_test_CBR, color = test)) +
+  geom_path(linewidth = 0.75) +
+  scale_color_manual(values = test_colors) +
+  facet_grid(~station, switch = "x") +
+  scale_y_continuous(trans = "reverse", limits = c(150,0)) +
+  scale_x_continuous(position = "top") +
+  xlab("Average RSP Index at Surface (0-6 inches)") +
+  ylab("Depth from Surface (mm)") +
+  labs(color = "Corresponding\nCBR Timepoint") +
+  theme_bw()
+```
+
+### For correlation
+```{r}
+meanCBR <- cbrdata %>% 
+  group_by(station_test) %>% 
+  summarize(meanCBR = mean(CBR))
+
+## Method 1: top  6 inches, Margie's CBR avg, and avg RSP across depth
+method1_corrval <- method1 %>% #average per test and averaged across depth too
+  group_by(station_test) %>% 
+  summarize(meanRSP = mean(rsp_index, na.rm = TRUE)) %>% 
+  full_join(meanCBR, by = "station_test")
+
+model1 <- lm(meanRSP ~ meanCBR, data = method1_corrval)
+r2_1 <- summary(model)$r.squared
+
+method1_corrval %>% 
+  ggplot(aes(x = meanRSP, y = meanCBR)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  annotate("text", x = 35, y = 18, label = paste("R² =", round(r2_1, 2)), size = 5, hjust = 1)
+
+## Method 2: top 6 inches, Margie's CBR, and avg RSP across depth (1 avg RSP per CBR)
+method2_corrval <- method2 %>% 
+  group_by(station_test_CBR) %>% 
+  summarize(meanRSP = mean(rsp_index, na.rm = TRUE)) %>% 
+  full_join(cbrdata, by = "station_test_CBR")
+
+model2 <- lm(meanRSP ~ CBR, data = method2_corrval)
+r2_2 <- summary(model)$r.squared
+
+method2_corrval %>% 
+  ggplot(aes(x = meanRSP, y = CBR)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  annotate("text", x = 28, y = 20, label = paste("R² =", round(r2_2, 2)), size = 5, hjust = 1)
 ```
 
