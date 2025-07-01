@@ -11,6 +11,8 @@ editor_options:
 ```{r}
 #install.packages("tidyverse")
 library(tidyverse)
+#install.packages("NatParksPalettes")
+library(NatParksPalettes)
 ```
 
 ## Load data
@@ -18,28 +20,75 @@ library(tidyverse)
 rspdata <- read_csv(file = "/Users/u4rrnkld/OneDrive - US Army Corps of Engineers/Documents/RSPtoCBR_correlation/data/rspdata.csv")
 
 cbrdata <- read_csv(file = "/Users/u4rrnkld/OneDrive - US Army Corps of Engineers/Documents/RSPtoCBR_correlation/data/cbrdata.csv")
+
+meancbrdata <- read_csv(file = "/Users/u4rrnkld/OneDrive - US Army Corps of Engineers/Documents/RSPtoCBR_correlation/data/meancbrdata.csv") %>% 
+  select(c(station_test, hours_avg, CBR))
 ```
 
 ## Analyze
 
 ### Spaghetti plots
 ```{r}
-## all data
-CBR_colors <- c(
-  "CBR1" = "#B71E42",
-  "CBR2" = "#FF7F0F",
-  "CBR3" = "#32A251",
-  "CBR4" = "#2C69B0",
-  "CBR5" = "orchid")
+# Create a small dataframe for your segment(s)
+segment_data <- data.frame(
+  x = c(99, 65),
+  xend = c(99, 65),
+  y = c(0, 250),
+  yend = c(250, 400),
+  segment_label = "500,000 lbs")  # label that will show in the legend
 
-#### plot
+segment_data$sample_id <- NA
+
+#### plot (used in TR)
 rspdata %>% 
+  mutate(CBR_rep = paste(CBR_id, rep)) %>% 
   ggplot(aes(x = rsp_index, y = depth_from_surface, group = sample_id, color = CBR_id)) +
   geom_path(linewidth = 0.75) +
-  geom_segment(aes(x = 99, y = 0, xend = 99, yend = 250), color = "black", , linewidth = 1) +
-  geom_segment(aes(x = 65, y = 250, xend = 65, yend = 400), color = "black", linewidth = 1) +
-  scale_color_manual(values = CBR_colors) +
-  facet_grid(test_area~test_id, switch = "x") +
+  geom_segment(data = segment_data,
+               aes(x = x, xend = xend, y = y, yend = yend, linetype = segment_label),
+               color = "black",
+               inherit.aes = FALSE,
+               linewidth = 0.75) +
+  scale_linetype_manual(name = "Minimum Required \nRSP for Aircraft Load",
+                        values = c("500,000 lbs" = "solid")) +
+  scale_color_manual(values = natparks.pals("Yellowstone", 5)) +
+  facet_grid(station~test, switch = "x") +
+  scale_y_continuous(trans = "reverse") +
+  scale_x_continuous(position = "top") +
+  xlab("RSP Index") +
+  ylab("Depth from Surface (mm)") +
+  labs(color = "Corresponding\nCBR Test\nLocation") +
+  theme_bw() +
+  theme(axis.text = element_text(size = 15),
+        axis.title = element_text(size = 15),
+        legend.text = element_text(size = 15),
+        legend.title = element_text(size = 15),
+        strip.text = element_text(size = 15))
+
+#### points with mean RSP lines - used to get one mean RSP for each station/test combo
+vlines_df <- rspdata %>%
+  #group_by(cbr_id) %>%
+  group_by(station_test) %>%
+  summarize(mean_rsp = mean(rsp_index)) %>% 
+  mutate(station = str_sub(station_test, 1, 4)) %>% 
+  mutate(test = str_sub(station_test, 6, 10)) %>%
+  mutate(test = ifelse(test == "test0", "Test 0", test)) %>% 
+  mutate(test = ifelse(test == "test1", "Test 1", test)) %>% 
+  mutate(test = ifelse(test == "test2", "Test 2", test)) %>% 
+  mutate(test = ifelse(test == "test3", "Test 3", test)) %>% 
+  mutate(test = ifelse(test == "test4", "Test 4", test)) %>% 
+  mutate(test = ifelse(test == "test5", "Test 5", test))
+
+rspdata %>% 
+  mutate(CBR_rep = paste(CBR_id, rep)) %>% 
+  ggplot(aes(x = rsp_index, y = depth_from_surface, group = CBR_id, color = CBR_id)) +
+  #geom_path(linewidth = 0.75) +
+  geom_point() +
+  geom_vline(data = vlines_df, aes(xintercept = mean_rsp), color = "black", linetype = "dashed", linewidth = 1) +
+  #scale_linetype_manual(name = "Minimum Required \nRSP for Aircraft Load",
+                        #values = c("500,000 lbs" = "solid")) +
+  scale_color_manual(values = natparks.pals("Yellowstone", 5)) +
+  facet_grid(station~test, switch = "x") +
   scale_y_continuous(trans = "reverse") +
   scale_x_continuous(position = "top") +
   xlab("RSP Index") +
@@ -49,7 +98,57 @@ rspdata %>%
   theme(axis.text = element_text(size = 12),
         axis.title = element_text(size = 12),
         legend.text = element_text(size = 12),
-        legend.title = element_text(size = 12))
+        legend.title = element_text(size = 12),
+        strip.text = element_text(size = 12))
+
+#### STEPwise version of previous plot
+rspdata %>% 
+  mutate(CBR_rep = paste(CBR_id, rep)) %>% 
+  ggplot(aes(x = depth_from_surface, y = rsp_index, group = sample_id, color = CBR_id)) +
+  geom_step(linewidth = 0.75, direction = "vh") +
+  scale_color_manual(values = natparks.pals("Yellowstone", 5)) +
+  facet_grid(station~test, switch = "x") +
+  scale_x_continuous(trans = "reverse") +
+  scale_y_continuous(position = "right") +
+  coord_flip() +
+  xlab("Depth from Surface (mm)") +
+  ylab("RSP Index") +
+  labs(color = "Corresponding\nCBR") +
+  theme_bw() +
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 12),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 12),
+        strip.text = element_text(size = 12))
+
+#### plot - each CBR and each test (colored by station)
+colors <- natparks.pals("Yellowstone", 5)
+selected_colors <- colors[c(1, 3, 4)]
+
+rspdata %>% ## stepwise station vs station grid
+  filter(station == "STA1") %>% 
+  #filter(rep == "r1") %>% 
+  mutate(CBR_rep = paste(CBR_id, rep)) %>% 
+  ggplot(aes(x = depth_from_surface, y = rsp_index, group = sample_id, color = rep)) +
+  #geom_path(linewidth = 0.75) +
+  geom_step(linewidth = 0.75, direction = "vh") +
+  #geom_segment(aes(x = 99, y = 0, xend = 99, yend = 250), color = "black", , linewidth = 1) +
+  #geom_segment(aes(x = 65, y = 250, xend = 65, yend = 400), color = "black", linewidth = 1) +
+  scale_color_manual(values=selected_colors) +
+  #scale_color_manual(values = natparks.pals("Yellowstone", 5)) +
+  facet_grid(CBR_id~test, switch = "x") +
+  scale_x_continuous(trans = "reverse") +
+  scale_y_continuous(position = "right") +
+  coord_flip() +
+  xlab("Depth from Surface (mm)") +
+  ylab("RSP Index") +
+  labs(color = "Corresponding\nCBR") +
+  theme_bw() +
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 12),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 12),
+        strip.text = element_text(size = 12))
 
 ## average spaghetti plot for each time point (test #)
 cbr_avg <- rspdata %>% 
@@ -72,13 +171,6 @@ cbr_avg <- rspdata %>%
   mutate(test = substr(station_test, 6, 10))
 
 #### plot
-test_colors <- c(
-  "Test 0" = "#B71E42",
-  "Test 1" = "#FF7F0F",
-  "Test 2" = "#32A251",
-  "Test 3" = "#2C69B0",
-  "Test 4" = "orchid")
-
 cbr_avg %>% 
   mutate(test = ifelse(test == "test0", "Test 0", test)) %>% 
   mutate(test = ifelse(test == "test1", "Test 1", test)) %>% 
@@ -88,7 +180,8 @@ cbr_avg %>%
   mutate(test = ifelse(test == "test5", "Test 5", test)) %>% 
   ggplot(aes(x = rsp_index, y = depth_from_surface, group = station_test, color = test)) +
   geom_path(linewidth = 0.75) +
-  scale_color_manual(values = test_colors) +
+  #scale_color_manual(values = test_colors) +
+  scale_color_manual(values=natparks.pals("Yellowstone", 5)) +
   facet_grid(~station, switch = "x") +
   scale_y_continuous(trans = "reverse") +
   scale_x_continuous(position = "top") +
@@ -96,26 +189,107 @@ cbr_avg %>%
   ylab("Depth from Surface (mm)") +
   labs(color = "Corresponding\nCBR Timepoint") +
   theme_bw()
+
+####### plot of mean RSPs
+mean_rsp_cbr <- full_join(meancbrdata, vlines_df, by = "station_test")
+
+mean_rsp_cbr %>% 
+  ggplot(aes(x = hours_avg, y = mean_rsp, group = station, color = station)) +
+  geom_line(linewidth = 1) +
+  scale_color_manual(values = selected_colors) +
+  xlab("Time since Test 0 (hours)") +
+  ylab("Mean RSP across depth (0-400mm)") +
+  labs(color = "Test Station") +
+  theme_bw() +
+  theme(axis.text = element_text(size = 15),
+        axis.title = element_text(size = 15),
+        legend.text = element_text(size = 15),
+        legend.title = element_text(size = 15),
+        strip.text = element_text(size = 15))
 ```
+
+### Correlation attempt with mean RSP from points (10 to 10, CBR to RSP)
+```{r}
+rsp_means_for_corr <- rspdata %>% #filter for RSPs relating to the CBRs that Margie kept
+  filter(!(station == "STA1" & test == "Test 0" & CBR_id == "CBR4")) %>% # remove CBR4 for STA1/test0
+  filter(!(station == "STA1" & test == "Test 1" & CBR_id == "CBR3")) %>% # remove CBR3 for STA1/test1
+  filter(!(station == "STA1" & test == "Test 1" & CBR_id == "CBR4")) %>% # remove CBR4 for STA1/test1
+  filter(!(station == "STA1" & test == "Test 2" & CBR_id == "CBR1")) %>% # remove CBR1 for STA1/test2
+  filter(!(station == "STA1" & test == "Test 3" & CBR_id == "CBR3")) %>% # remove CBR3 for STA1/test3
+  filter(!(station == "STA2" & test == "Test 2" & CBR_id == "CBR1")) %>% # remove CBR1 for STA2/test2
+  filter(between(depth_from_surface, 50, 200)) %>% #keep 50mm through 200mm)
+  group_by(station_test) %>%
+  summarize(mean_rsp = mean(rsp_index)) %>% 
+  mutate(station = str_sub(station_test, 1, 4)) %>% 
+  mutate(test = str_sub(station_test, 6, 10)) %>%
+  mutate(test = ifelse(test == "test0", "Test 0", test)) %>% 
+  mutate(test = ifelse(test == "test1", "Test 1", test)) %>% 
+  mutate(test = ifelse(test == "test2", "Test 2", test)) %>% 
+  mutate(test = ifelse(test == "test3", "Test 3", test)) %>% 
+  mutate(test = ifelse(test == "test4", "Test 4", test)) %>% 
+  mutate(test = ifelse(test == "test5", "Test 5", test))
+
+means_for_corr <- full_join(meancbrdata, rsp_means_for_corr, by = "station_test")
+
+means_for_corr %>% 
+  ggplot(aes(x = hours_avg, y = mean_rsp, group = station, color = station)) +
+  geom_line(linewidth = 1) +
+  scale_color_manual(values = selected_colors) +
+  xlab("Time since Test 0 (hours)") +
+  ylab("Mean RSP across depth (0-400mm)") +
+  labs(color = "Test Station") +
+  theme_bw() +
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 12),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 12),
+        strip.text = element_text(size = 12))
+
+## correlation
+model <- lm(CBR ~ mean_rsp, data = means_for_corr)
+r2 <- summary(model)$r.squared
+
+ggplot(means_for_corr, aes(x = mean_rsp, y = CBR)) +
+  geom_point(aes(color = station), size = 3) +
+  #scale_x_log10() +
+  #scale_y_log10() +
+  scale_color_manual(values = selected_colors) +
+  geom_smooth(method = "lm", se = FALSE, color = "black", linetype = "dashed") +
+  annotate("text", x = 35, y = 18, label = paste("R² =", round(r2, 2)), size = 6, hjust = 4) +
+  xlab("RSP") +
+  ylab("CBR") +
+  labs(color = "Test Station:") +
+  theme_bw() +
+  theme(axis.text = element_text(size = 15),
+        axis.title = element_text(size = 15),
+        legend.text = element_text(size = 15),
+        legend.title = element_text(size = 15),
+        legend.position = "top",
+        strip.text = element_text(size = 15))
+```
+
+
+
+-----------------------------------------------
 
 ### Filter correlation data (top 6 inches and CBRs Margie kept)
 ```{r}
 ## top 6 inches and CBRs that Margie kept
 surface_CBR <- rspdata %>%
   filter(!depth_from_surface > 150) %>% #top 6 inches (~150mm)
-  filter(!(test_area == "STA1" & test_id == "Test 0" & CBR_id == "CBR4")) %>% # remove CBR4 for STA1/test0
-  filter(!(test_area == "STA1" & test_id == "Test 1" & CBR_id == "CBR3")) %>% # remove CBR3 for STA1/test1
-  filter(!(test_area == "STA1" & test_id == "Test 1" & CBR_id == "CBR4")) %>% # remove CBR4 for STA1/test1
-  filter(!(test_area == "STA1" & test_id == "Test 2" & CBR_id == "CBR1")) %>% # remove CBR1 for STA1/test2
-  filter(!(test_area == "STA1" & test_id == "Test 3" & CBR_id == "CBR3")) %>% # remove CBR3 for STA1/test3
-  filter(!(test_area == "STA2" & test_id == "Test 2" & CBR_id == "CBR1")) # remove CBR1 for STA2/test2
+  filter(!(station == "STA1" & test == "Test 0" & CBR_id == "CBR4")) %>% # remove CBR4 for STA1/test0
+  filter(!(station == "STA1" & test == "Test 1" & CBR_id == "CBR3")) %>% # remove CBR3 for STA1/test1
+  filter(!(station == "STA1" & test == "Test 1" & CBR_id == "CBR4")) %>% # remove CBR4 for STA1/test1
+  filter(!(station == "STA1" & test == "Test 2" & CBR_id == "CBR1")) %>% # remove CBR1 for STA1/test2
+  filter(!(station == "STA1" & test == "Test 3" & CBR_id == "CBR3")) %>% # remove CBR3 for STA1/test3
+  filter(!(station == "STA2" & test == "Test 2" & CBR_id == "CBR1")) # remove CBR1 for STA2/test2
 
 #### plot
 surface_CBR %>% 
   ggplot(aes(x = rsp_index, y = depth_from_surface, group = sample_id, color = CBR_id)) +
   geom_path(linewidth = 0.75) +
-  scale_color_manual(values = CBR_colors) +
-  facet_grid(test_area~test_id, switch = "x") +
+  scale_color_manual(values=natparks.pals("Yellowstone", 5)) +
+  facet_grid(station~test, switch = "x") +
   scale_y_continuous(trans = "reverse", limits = c(150,0)) +
   scale_x_continuous(position = "top") +
   xlab("RSP Index at Surface (0-6 inches)") +
@@ -417,3 +591,4 @@ mid_method2_corrval %>%
   geom_smooth(method = "lm", se = FALSE) +
   annotate("text", x = 28, y = 20, label = paste("R² =", round(mid_r2_2, 2)), size = 5, hjust = 1)
 ```
+

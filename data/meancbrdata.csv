@@ -1,0 +1,11 @@
+station_test,station,test,hours_avg,CBR
+STA1_test0,STA1,test0,0,8.9
+STA1_test1,STA1,test1,6.3,8.7
+STA1_test2,STA1,test2,23.3,11.8
+STA1_test3,STA1,test3,26.7,12.6
+STA1_test4,STA1,test4,30.4,13.1
+STA2_test0,STA2,test0,0,8.4
+STA2_test1,STA2,test1,5.2,8.4
+STA2_test2,STA2,test2,21.9,14
+STA2_test3,STA2,test3,26.6,17.7
+STA2_test4,STA2,test4,28.8,18.1
