@@ -190,7 +190,7 @@ cbr_avg %>%
   labs(color = "Corresponding\nCBR Timepoint") +
   theme_bw()
 
-####### plot of mean RSPs
+####### plot of mean RSPs (all data)
 mean_rsp_cbr <- full_join(meancbrdata, vlines_df, by = "station_test")
 
 mean_rsp_cbr %>% 
@@ -231,7 +231,7 @@ rsp_means_for_corr <- rspdata %>% #filter for RSPs relating to the CBRs that Mar
 
 means_for_corr <- full_join(meancbrdata, rsp_means_for_corr, by = "station_test")
 
-means_for_corr %>% 
+means_for_corr %>% ## only those relating to remaining CBR data
   ggplot(aes(x = hours_avg, y = mean_rsp, group = station, color = station)) +
   geom_line(linewidth = 1) +
   scale_color_manual(values = selected_colors) +
