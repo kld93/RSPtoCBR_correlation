@@ -27,30 +27,45 @@ meancbrdata <- read_csv(file = "/Users/u4rrnkld/OneDrive - US Army Corps of Engi
 
 ## Analyze
 
-### Spaghetti plots
+### Spaghetti plots for all data
 ```{r}
-# Create a small dataframe for your segment(s)
-segment_data <- data.frame(
+# Create a small dataframe for the C-17 segments
+c17_segment_data <- data.frame(
   x = c(99, 65),
   xend = c(99, 65),
   y = c(0, 250),
   yend = c(250, 400),
-  segment_label = "500,000 lbs")  # label that will show in the legend
+  segment_label = "Minimum RSP\nRequired for\nAircraft Load\nof 500,000 lbs")  # label that will show in the legend
 
-segment_data$sample_id <- NA
+c17_segment_data$sample_id <- NA
 
-#### plot (used in TR)
+# Calculate mean lines
+station_test_mean_unfiltered <- rspdata %>%
+  #group_by(cbr_id) %>%
+  group_by(station_test) %>%
+  summarize(mean_rsp = mean(rsp_index)) %>% 
+  mutate(station = str_sub(station_test, 1, 4)) %>% 
+  mutate(test = str_sub(station_test, 6, 10)) %>%
+  mutate(test = ifelse(test == "test0", "Test 0", test)) %>% 
+  mutate(test = ifelse(test == "test1", "Test 1", test)) %>% 
+  mutate(test = ifelse(test == "test2", "Test 2", test)) %>% 
+  mutate(test = ifelse(test == "test3", "Test 3", test)) %>% 
+  mutate(test = ifelse(test == "test4", "Test 4", test)) %>% 
+  mutate(test = ifelse(test == "test5", "Test 5", test))
+
+# Spaghetti Plot
 rspdata %>% 
   mutate(CBR_rep = paste(CBR_id, rep)) %>% 
   ggplot(aes(x = rsp_index, y = depth_from_surface, group = sample_id, color = CBR_id)) +
   geom_path(linewidth = 0.75) +
-  geom_segment(data = segment_data,
-               aes(x = x, xend = xend, y = y, yend = yend, linetype = segment_label),
-               color = "black",
+  geom_vline(data = station_test_mean_unfiltered, aes(xintercept = mean_rsp), color = "black", linetype = "dashed", linewidth = 1) +
+  geom_segment(data = c17_segment_data,
+               aes(x = x, xend = xend, y = y, yend = yend),
+               color = "darkred", 
                inherit.aes = FALSE,
                linewidth = 0.75) +
-  scale_linetype_manual(name = "Minimum Required \nRSP for Aircraft Load",
-                        values = c("500,000 lbs" = "solid")) +
+  #scale_linetype_manual(name = "",
+                        #values = c("Minimum RSP\nRequired for\nAircraft Load\nof 500,000 lbs" = "solid", "Mean RSP" = "dashed")) +
   scale_color_manual(values = natparks.pals("Yellowstone", 5)) +
   facet_grid(station~test, switch = "x") +
   scale_y_continuous(trans = "reverse") +
@@ -65,92 +80,7 @@ rspdata %>%
         legend.title = element_text(size = 15),
         strip.text = element_text(size = 15))
 
-#### points with mean RSP lines - used to get one mean RSP for each station/test combo
-vlines_df <- rspdata %>%
-  #group_by(cbr_id) %>%
-  group_by(station_test) %>%
-  summarize(mean_rsp = mean(rsp_index)) %>% 
-  mutate(station = str_sub(station_test, 1, 4)) %>% 
-  mutate(test = str_sub(station_test, 6, 10)) %>%
-  mutate(test = ifelse(test == "test0", "Test 0", test)) %>% 
-  mutate(test = ifelse(test == "test1", "Test 1", test)) %>% 
-  mutate(test = ifelse(test == "test2", "Test 2", test)) %>% 
-  mutate(test = ifelse(test == "test3", "Test 3", test)) %>% 
-  mutate(test = ifelse(test == "test4", "Test 4", test)) %>% 
-  mutate(test = ifelse(test == "test5", "Test 5", test))
-
-rspdata %>% 
-  mutate(CBR_rep = paste(CBR_id, rep)) %>% 
-  ggplot(aes(x = rsp_index, y = depth_from_surface, group = CBR_id, color = CBR_id)) +
-  #geom_path(linewidth = 0.75) +
-  geom_point() +
-  geom_vline(data = vlines_df, aes(xintercept = mean_rsp), color = "black", linetype = "dashed", linewidth = 1) +
-  #scale_linetype_manual(name = "Minimum Required \nRSP for Aircraft Load",
-                        #values = c("500,000 lbs" = "solid")) +
-  scale_color_manual(values = natparks.pals("Yellowstone", 5)) +
-  facet_grid(station~test, switch = "x") +
-  scale_y_continuous(trans = "reverse") +
-  scale_x_continuous(position = "top") +
-  xlab("RSP Index") +
-  ylab("Depth from Surface (mm)") +
-  labs(color = "Corresponding\nCBR") +
-  theme_bw() +
-  theme(axis.text = element_text(size = 12),
-        axis.title = element_text(size = 12),
-        legend.text = element_text(size = 12),
-        legend.title = element_text(size = 12),
-        strip.text = element_text(size = 12))
-
-#### STEPwise version of previous plot
-rspdata %>% 
-  mutate(CBR_rep = paste(CBR_id, rep)) %>% 
-  ggplot(aes(x = depth_from_surface, y = rsp_index, group = sample_id, color = CBR_id)) +
-  geom_step(linewidth = 0.75, direction = "vh") +
-  scale_color_manual(values = natparks.pals("Yellowstone", 5)) +
-  facet_grid(station~test, switch = "x") +
-  scale_x_continuous(trans = "reverse") +
-  scale_y_continuous(position = "right") +
-  coord_flip() +
-  xlab("Depth from Surface (mm)") +
-  ylab("RSP Index") +
-  labs(color = "Corresponding\nCBR") +
-  theme_bw() +
-  theme(axis.text = element_text(size = 12),
-        axis.title = element_text(size = 12),
-        legend.text = element_text(size = 12),
-        legend.title = element_text(size = 12),
-        strip.text = element_text(size = 12))
-
-#### plot - each CBR and each test (colored by station)
-colors <- natparks.pals("Yellowstone", 5)
-selected_colors <- colors[c(1, 3, 4)]
-
-rspdata %>% ## stepwise station vs station grid
-  filter(station == "STA1") %>% 
-  #filter(rep == "r1") %>% 
-  mutate(CBR_rep = paste(CBR_id, rep)) %>% 
-  ggplot(aes(x = depth_from_surface, y = rsp_index, group = sample_id, color = rep)) +
-  #geom_path(linewidth = 0.75) +
-  geom_step(linewidth = 0.75, direction = "vh") +
-  #geom_segment(aes(x = 99, y = 0, xend = 99, yend = 250), color = "black", , linewidth = 1) +
-  #geom_segment(aes(x = 65, y = 250, xend = 65, yend = 400), color = "black", linewidth = 1) +
-  scale_color_manual(values=selected_colors) +
-  #scale_color_manual(values = natparks.pals("Yellowstone", 5)) +
-  facet_grid(CBR_id~test, switch = "x") +
-  scale_x_continuous(trans = "reverse") +
-  scale_y_continuous(position = "right") +
-  coord_flip() +
-  xlab("Depth from Surface (mm)") +
-  ylab("RSP Index") +
-  labs(color = "Corresponding\nCBR") +
-  theme_bw() +
-  theme(axis.text = element_text(size = 12),
-        axis.title = element_text(size = 12),
-        legend.text = element_text(size = 12),
-        legend.title = element_text(size = 12),
-        strip.text = element_text(size = 12))
-
-## average spaghetti plot for each time point (test #)
+# Average spaghetti plot for each time point (test #)
 cbr_avg <- rspdata %>% 
   select(c(sample_id, depth_from_surface, rsp_index)) %>% 
   pivot_wider(names_from = sample_id, values_from = rsp_index) %>% 
@@ -170,7 +100,6 @@ cbr_avg <- rspdata %>%
   mutate(station = substr(station_test, 1, 4)) %>% 
   mutate(test = substr(station_test, 6, 10))
 
-#### plot
 cbr_avg %>% 
   mutate(test = ifelse(test == "test0", "Test 0", test)) %>% 
   mutate(test = ifelse(test == "test1", "Test 1", test)) %>% 
@@ -189,6 +118,250 @@ cbr_avg %>%
   ylab("Depth from Surface (mm)") +
   labs(color = "Corresponding\nCBR Timepoint") +
   theme_bw()
+```
+
+### Stepwise versions (NOT USED)
+```{r}
+# STEPwise version of previous plot - (NOT USED SO FAR)
+rspdata %>% 
+  mutate(CBR_rep = paste(CBR_id, rep)) %>% 
+  ggplot(aes(x = depth_from_surface, y = rsp_index, group = sample_id, color = CBR_id)) +
+  geom_step(linewidth = 0.75, direction = "vh") +
+  scale_color_manual(values = natparks.pals("Yellowstone", 5)) +
+  facet_grid(station~test, switch = "x") +
+  scale_x_continuous(trans = "reverse") +
+  scale_y_continuous(position = "right") +
+  coord_flip() +
+  xlab("Depth from Surface (mm)") +
+  ylab("RSP Index") +
+  labs(color = "Corresponding\nCBR") +
+  theme_bw() +
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 12),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 12),
+        strip.text = element_text(size = 12))
+
+### Each CBR and each test (colored by station) - (NOT USED SO FAR)
+colors <- natparks.pals("Yellowstone", 5)
+selected_colors <- colors[c(1, 3, 4)]
+
+rspdata %>% ## stepwise station vs station grid
+  filter(station == "STA1") %>% 
+  mutate(CBR_rep = paste(CBR_id, rep)) %>% 
+  ggplot(aes(x = depth_from_surface, y = rsp_index, group = sample_id, color = rep)) +
+  geom_step(linewidth = 0.75, direction = "vh") +
+  scale_color_manual(values=selected_colors) +
+  facet_grid(CBR_id~test, switch = "x") +
+  scale_x_continuous(trans = "reverse") +
+  scale_y_continuous(position = "right") +
+  coord_flip() +
+  xlab("Depth from Surface (mm)") +
+  ylab("RSP Index") +
+  labs(color = "Corresponding\nCBR") +
+  theme_bw() +
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 12),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 12),
+        strip.text = element_text(size = 12))
+```
+
+### Spaghetti plots for each test (facet by station)
+```{r}
+# Test 0
+test0_means <- station_test_mean_unfiltered %>% 
+  filter(test == "Test 0")
+
+rspdata %>% 
+  mutate(CBR_rep = paste(CBR_id, rep)) %>% 
+  filter(test == "Test 0") %>% 
+  ggplot(aes(x = rsp_index, y = depth_from_surface, group = sample_id, color = CBR_id)) +
+  geom_path(linewidth = 0.75) +
+  #geom_vline(data = test0_means, aes(xintercept = mean_rsp), color = "black", linetype = "dashed", linewidth = 1) +
+  geom_segment(data = c17_segment_data,
+               aes(x = x, xend = xend, y = y, yend = yend),
+               color = "darkred", 
+               inherit.aes = FALSE,
+               linewidth = 0.75) +
+  #scale_linetype_manual(name = "",
+                        #values = c("Minimum RSP\nRequired for\nAircraft Load\nof 500,000 lbs" = "solid", "Mean RSP" = "dashed")) +
+  scale_color_manual(values = natparks.pals("Yellowstone", 5)) +
+  facet_wrap(~station, switch = "x") +
+  scale_y_continuous(trans = "reverse") +
+  scale_x_continuous(position = "top", limit = c(0, 200)) +
+  xlab("RSP Index") +
+  ylab("Depth from Surface (mm)") +
+  labs(color = "Corresponding\nCBR Test\nLocation") +
+  theme_bw() +
+  theme(axis.text = element_text(size = 15),
+        axis.title = element_text(size = 15),
+        legend.text = element_text(size = 15),
+        legend.title = element_text(size = 15),
+        strip.text = element_text(size = 15))
+
+# Test 1
+test1_means <- station_test_mean_unfiltered %>% 
+  filter(test == "Test 1")
+
+rspdata %>% 
+  mutate(CBR_rep = paste(CBR_id, rep)) %>% 
+  filter(test == "Test 1") %>% 
+  ggplot(aes(x = rsp_index, y = depth_from_surface, group = sample_id, color = CBR_id)) +
+  geom_path(linewidth = 0.75) +
+  geom_vline(data = test1_means, aes(xintercept = mean_rsp), color = "black", linetype = "dashed", linewidth = 1) +
+  geom_segment(data = c17_segment_data,
+               aes(x = x, xend = xend, y = y, yend = yend),
+               color = "darkred", 
+               inherit.aes = FALSE,
+               linewidth = 0.75) +
+  #scale_linetype_manual(name = "",
+                        #values = c("Minimum RSP\nRequired for\nAircraft Load\nof 500,000 lbs" = "solid", "Mean RSP" = "dashed")) +
+  scale_color_manual(values = natparks.pals("Yellowstone", 5)) +
+  facet_wrap(~station, switch = "x") +
+  scale_y_continuous(trans = "reverse") +
+  scale_x_continuous(position = "top", limit = c(0, 200)) +
+  xlab("RSP Index") +
+  ylab("Depth from Surface (mm)") +
+  labs(color = "Corresponding\nCBR Test\nLocation") +
+  theme_bw() +
+  theme(axis.text = element_text(size = 15),
+        axis.title = element_text(size = 15),
+        legend.text = element_text(size = 15),
+        legend.title = element_text(size = 15),
+        strip.text = element_text(size = 15))
+
+# Test 2
+test2_means <- station_test_mean_unfiltered %>% 
+  filter(test == "Test 2")
+
+rspdata %>% 
+  mutate(CBR_rep = paste(CBR_id, rep)) %>% 
+  filter(test == "Test 2") %>% 
+  ggplot(aes(x = rsp_index, y = depth_from_surface, group = sample_id, color = CBR_id)) +
+  geom_path(linewidth = 0.75) +
+  geom_vline(data = test2_means, aes(xintercept = mean_rsp), color = "black", linetype = "dashed", linewidth = 1) +
+  geom_segment(data = c17_segment_data,
+               aes(x = x, xend = xend, y = y, yend = yend),
+               color = "darkred", 
+               inherit.aes = FALSE,
+               linewidth = 0.75) +
+  #scale_linetype_manual(name = "",
+                        #values = c("Minimum RSP\nRequired for\nAircraft Load\nof 500,000 lbs" = "solid", "Mean RSP" = "dashed")) +
+  scale_color_manual(values = natparks.pals("Yellowstone", 5)) +
+  facet_wrap(~station, switch = "x") +
+  scale_y_continuous(trans = "reverse") +
+  scale_x_continuous(position = "top", limit = c(0, 200)) +
+  xlab("RSP Index") +
+  ylab("Depth from Surface (mm)") +
+  labs(color = "Corresponding\nCBR Test\nLocation") +
+  theme_bw() +
+  theme(axis.text = element_text(size = 15),
+        axis.title = element_text(size = 15),
+        legend.text = element_text(size = 15),
+        legend.title = element_text(size = 15),
+        strip.text = element_text(size = 15))
+
+# Test 3
+test3_means <- station_test_mean_unfiltered %>% 
+  filter(test == "Test 3")
+
+rspdata %>% 
+  mutate(CBR_rep = paste(CBR_id, rep)) %>% 
+  filter(test == "Test 3") %>% 
+  ggplot(aes(x = rsp_index, y = depth_from_surface, group = sample_id, color = CBR_id)) +
+  geom_path(linewidth = 0.75) +
+  geom_vline(data = test3_means, aes(xintercept = mean_rsp), color = "black", linetype = "dashed", linewidth = 1) +
+  geom_segment(data = c17_segment_data,
+               aes(x = x, xend = xend, y = y, yend = yend),
+               color = "darkred", 
+               inherit.aes = FALSE,
+               linewidth = 0.75) +
+  #scale_linetype_manual(name = "",
+                        #values = c("Minimum RSP\nRequired for\nAircraft Load\nof 500,000 lbs" = "solid", "Mean RSP" = "dashed")) +
+  scale_color_manual(values = natparks.pals("Yellowstone", 5)) +
+  facet_wrap(~station, switch = "x") +
+  scale_y_continuous(trans = "reverse") +
+  scale_x_continuous(position = "top", limit = c(0, 200)) +
+  xlab("RSP Index") +
+  ylab("Depth from Surface (mm)") +
+  labs(color = "Corresponding\nCBR Test\nLocation") +
+  theme_bw() +
+  theme(axis.text = element_text(size = 15),
+        axis.title = element_text(size = 15),
+        legend.text = element_text(size = 15),
+        legend.title = element_text(size = 15),
+        strip.text = element_text(size = 15))
+
+# Test 4
+test4_means <- station_test_mean_unfiltered %>% 
+  filter(test == "Test 4")
+
+rspdata %>% 
+  mutate(CBR_rep = paste(CBR_id, rep)) %>% 
+  filter(test == "Test 4") %>% 
+  ggplot(aes(x = rsp_index, y = depth_from_surface, group = sample_id, color = CBR_id)) +
+  geom_path(linewidth = 0.75) +
+  geom_vline(data = test4_means, aes(xintercept = mean_rsp), color = "black", linetype = "dashed", linewidth = 1) +
+  geom_segment(data = c17_segment_data,
+               aes(x = x, xend = xend, y = y, yend = yend),
+               color = "darkred", 
+               inherit.aes = FALSE,
+               linewidth = 0.75) +
+  #scale_linetype_manual(name = "",
+                        #values = c("Minimum RSP\nRequired for\nAircraft Load\nof 500,000 lbs" = "solid", "Mean RSP" = "dashed")) +
+  scale_color_manual(values = natparks.pals("Yellowstone", 5)) +
+  facet_wrap(~station, switch = "x") +
+  scale_y_continuous(trans = "reverse") +
+  scale_x_continuous(position = "top", limit = c(0, 200)) +
+  xlab("RSP Index") +
+  ylab("Depth from Surface (mm)") +
+  labs(color = "Corresponding\nCBR Test\nLocation") +
+  theme_bw() +
+  theme(axis.text = element_text(size = 15),
+        axis.title = element_text(size = 15),
+        legend.text = element_text(size = 15),
+        legend.title = element_text(size = 15),
+        strip.text = element_text(size = 15))
+```
+
+### Mean RSP for Correlation
+```{r}
+# Calculate means for each Station/Test combination (10 total) (to get one mean RSP for each CBR)
+station_test_mean_filtered <- rspdata %>%
+  #group_by(cbr_id) %>%
+  group_by(station_test) %>%
+  summarize(mean_rsp = mean(rsp_index)) %>% 
+  mutate(station = str_sub(station_test, 1, 4)) %>% 
+  mutate(test = str_sub(station_test, 6, 10)) %>%
+  mutate(test = ifelse(test == "test0", "Test 0", test)) %>% 
+  mutate(test = ifelse(test == "test1", "Test 1", test)) %>% 
+  mutate(test = ifelse(test == "test2", "Test 2", test)) %>% 
+  mutate(test = ifelse(test == "test3", "Test 3", test)) %>% 
+  mutate(test = ifelse(test == "test4", "Test 4", test)) %>% 
+  mutate(test = ifelse(test == "test5", "Test 5", test))
+
+rspdata %>% 
+  mutate(CBR_rep = paste(CBR_id, rep)) %>% 
+  ggplot(aes(x = rsp_index, y = depth_from_surface, group = CBR_id, color = CBR_id)) +
+  #geom_path(linewidth = 0.75) +
+  geom_point() +
+  geom_vline(data = station_test_mean_filtered, aes(xintercept = mean_rsp), color = "black", linetype = "dashed", linewidth = 1) +
+  #scale_linetype_manual(name = "Minimum Required \nRSP for Aircraft Load",
+                        #values = c("500,000 lbs" = "solid")) +
+  scale_color_manual(values = natparks.pals("Yellowstone", 5)) +
+  facet_grid(station~test, switch = "x") +
+  scale_y_continuous(trans = "reverse") +
+  scale_x_continuous(position = "top") +
+  xlab("RSP Index") +
+  ylab("Depth from Surface (mm)") +
+  labs(color = "Corresponding\nCBR") +
+  theme_bw() +
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 12),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 12),
+        strip.text = element_text(size = 12))
 
 ####### plot of mean RSPs (all data)
 mean_rsp_cbr <- full_join(meancbrdata, vlines_df, by = "station_test")
@@ -208,7 +381,7 @@ mean_rsp_cbr %>%
         strip.text = element_text(size = 15))
 ```
 
-### Correlation attempt with mean RSP from points (10 to 10, CBR to RSP)
+#### Correlation with mean RSP from points (10 to 10, CBR to RSP)
 ```{r}
 rsp_means_for_corr <- rspdata %>% #filter for RSPs relating to the CBRs that Margie kept
   filter(!(station == "STA1" & test == "Test 0" & CBR_id == "CBR4")) %>% # remove CBR4 for STA1/test0
