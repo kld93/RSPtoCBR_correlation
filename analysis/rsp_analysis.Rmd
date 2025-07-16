@@ -360,6 +360,10 @@ rspdata %>%
 ####### plot of mean RSPs (all data)
 mean_rsp_cbr <- full_join(meancbrdata, station_test_mean_unfiltered, by = "station_test")
 
+visual_mean_rsp <- mean_rsp_cbr %>% 
+  select(-mean_rsp) %>% 
+  mutate(visual_mean_rsp = c(25, 29.5, 34, 30, 32, 30, 41.7, 45.3, 48.3, 54))
+
 group_colors <- c("STA1" = "darkgreen", "STA2" = "deepskyblue")
 
 mean_rsp_cbr %>% 
@@ -385,6 +389,30 @@ mean_rsp_cbr %>%
 ## stat_poly_eq gives the following equations (add them manually in ppt to match Margie's plot)
 #### green: y = 25.8 + 0.21x (R2 = 0.81)
 #### blue: y = 33 + 0.57x (R2 = 0.89)
+
+visual_mean_rsp %>% #### Use this one in TR since it used the "visual average" values
+  ggplot(aes(x = hours_avg, y = visual_mean_rsp, group = station, color = station)) +
+  geom_line(linewidth = 1.25) +
+  geom_point(size = 3) +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dotted") +
+  #stat_poly_eq(
+    #aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")),
+    #formula = y ~ x,
+    #parse = TRUE) +
+  scale_color_manual(values = group_colors) +
+  scale_x_continuous(limits = c(0,35), breaks = seq(0, 35, by = 5)) +
+  xlab("Time Duration (hr)") +
+  ylab("Average RSP across depth (0-400mm)") +
+  labs(color = "Test Station") +
+  theme_bw() +
+  theme(axis.text = element_text(size = 15),
+        axis.title = element_text(size = 15),
+        legend.text = element_text(size = 15),
+        legend.title = element_text(size = 15),
+        strip.text = element_text(size = 15))
+## stat_poly_eq gives the following equations (add them manually in ppt to match Margie's plot)
+#### green: y = 26.7 + 0.199x (R2 = 0.62)
+#### blue: y = 33.5 + 0.631x (R2 = 0.84)
 ```
 
 #### Correlation with mean RSP from points (10 to 10, CBR to RSP)
