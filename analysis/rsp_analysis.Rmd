@@ -190,11 +190,11 @@ rspdata %>%
   #scale_linetype_manual(name = "",
                         #values = c("Minimum RSP\nRequired for\nAircraft Load\nof 500,000 lbs" = "solid", "Mean RSP" = "dashed")) +
   scale_color_manual(values = natparks.pals("Yellowstone", 5)) +
-  facet_wrap(~station, switch = "x") +
-  scale_y_continuous(trans = "reverse", minor_breaks = seq(0, 400, 10)) +
-  scale_x_continuous(position = "top", limit = c(0, 200), minor_breaks = seq(0, 200, 5)) +
+  facet_wrap(~station, strip.position = "bottom") +
+  scale_y_continuous(trans = "reverse", name = "Penetration Depth (mm)", 
+                     sec.axis = sec_axis(~ . / 25.4, name = "Penetration Depth (in)")) +
+  scale_x_continuous(position = "top", limit = c(0, 200)) +
   xlab("RSP Index") +
-  ylab("Depth from Surface (mm)") +
   labs(color = "Corresponding\nCBR Test\nLocation") +
   theme_bw() +
   theme(axis.text = element_text(size = 15),
@@ -202,19 +202,20 @@ rspdata %>%
         legend.text = element_text(size = 15),
         legend.title = element_text(size = 15),
         strip.text = element_text(size = 15),
-        panel.grid.major = element_line(color = "grey80"))
+        axis.title.y.right = element_text(angle = 90))
+        #panel.grid.major = element_line(color = "grey80"))
 
 # Test 1
 test1_means <- station_test_mean_unfiltered %>% 
   filter(test == "Test 1")
 
 rspdata %>% 
-  mutate(CBR_rep = paste(CBR_id, rep)) %>% 
+  mutate(CBR_rep = paste(CBR_id, rep)) %>%
   filter(test == "Test 1") %>% 
-  #View
+  #View()
   ggplot(aes(x = rsp_index, y = depth_from_surface, group = sample_id, color = CBR_id)) +
   geom_path(linewidth = 0.75) +
-  #geom_vline(data = test1_means, aes(xintercept = mean_rsp), color = "black", linetype = "dashed", linewidth = 1) +
+  #geom_vline(data = test0_means, aes(xintercept = mean_rsp), color = "black", linetype = "dashed", linewidth = 1) +
   geom_segment(data = c17_segment_data,
                aes(x = x, xend = xend, y = y, yend = yend),
                color = "darkred", 
@@ -223,30 +224,32 @@ rspdata %>%
   #scale_linetype_manual(name = "",
                         #values = c("Minimum RSP\nRequired for\nAircraft Load\nof 500,000 lbs" = "solid", "Mean RSP" = "dashed")) +
   scale_color_manual(values = natparks.pals("Yellowstone", 5)) +
-  facet_wrap(~station, switch = "x") +
-  scale_y_continuous(trans = "reverse", minor_breaks = seq(0, 400, 10)) +
-  scale_x_continuous(position = "top", limit = c(0, 200), minor_breaks = seq(0, 200, 5)) +
+  facet_wrap(~station, strip.position = "bottom") +
+  scale_y_continuous(trans = "reverse", name = "Penetration Depth (mm)", 
+                     sec.axis = sec_axis(~ . / 25.4, name = "Penetration Depth (in)")) +
+  scale_x_continuous(position = "top", limit = c(0, 200)) +
   xlab("RSP Index") +
-  ylab("Depth from Surface (mm)") +
   labs(color = "Corresponding\nCBR Test\nLocation") +
   theme_bw() +
   theme(axis.text = element_text(size = 15),
         axis.title = element_text(size = 15),
         legend.text = element_text(size = 15),
         legend.title = element_text(size = 15),
-        strip.text = element_text(size = 15))
+        strip.text = element_text(size = 15),
+        axis.title.y.right = element_text(angle = 90))
+        #panel.grid.major = element_line(color = "grey80"))
 
 # Test 2
 test2_means <- station_test_mean_unfiltered %>% 
   filter(test == "Test 2")
 
 rspdata %>% 
-  mutate(CBR_rep = paste(CBR_id, rep)) %>% 
+  mutate(CBR_rep = paste(CBR_id, rep)) %>%
   filter(test == "Test 2") %>% 
   #View()
   ggplot(aes(x = rsp_index, y = depth_from_surface, group = sample_id, color = CBR_id)) +
   geom_path(linewidth = 0.75) +
-  #geom_vline(data = test2_means, aes(xintercept = mean_rsp), color = "black", linetype = "dashed", linewidth = 1) +
+  #geom_vline(data = test0_means, aes(xintercept = mean_rsp), color = "black", linetype = "dashed", linewidth = 1) +
   geom_segment(data = c17_segment_data,
                aes(x = x, xend = xend, y = y, yend = yend),
                color = "darkred", 
@@ -255,30 +258,32 @@ rspdata %>%
   #scale_linetype_manual(name = "",
                         #values = c("Minimum RSP\nRequired for\nAircraft Load\nof 500,000 lbs" = "solid", "Mean RSP" = "dashed")) +
   scale_color_manual(values = natparks.pals("Yellowstone", 5)) +
-  facet_wrap(~station, switch = "x") +
-  scale_y_continuous(trans = "reverse", minor_breaks = seq(0, 400, 10)) +
-  scale_x_continuous(position = "top", limit = c(0, 200), minor_breaks = seq(0, 200, 5)) +
+  facet_wrap(~station, strip.position = "bottom") +
+  scale_y_continuous(trans = "reverse", name = "Penetration Depth (mm)", 
+                     sec.axis = sec_axis(~ . / 25.4, name = "Penetration Depth (in)")) +
+  scale_x_continuous(position = "top", limit = c(0, 200)) +
   xlab("RSP Index") +
-  ylab("Depth from Surface (mm)") +
   labs(color = "Corresponding\nCBR Test\nLocation") +
   theme_bw() +
   theme(axis.text = element_text(size = 15),
         axis.title = element_text(size = 15),
         legend.text = element_text(size = 15),
         legend.title = element_text(size = 15),
-        strip.text = element_text(size = 15))
+        strip.text = element_text(size = 15),
+        axis.title.y.right = element_text(angle = 90))
+        #panel.grid.major = element_line(color = "grey80"))
 
 # Test 3
 test3_means <- station_test_mean_unfiltered %>% 
   filter(test == "Test 3")
 
 rspdata %>% 
-  mutate(CBR_rep = paste(CBR_id, rep)) %>% 
+  mutate(CBR_rep = paste(CBR_id, rep)) %>%
   filter(test == "Test 3") %>% 
   #View()
   ggplot(aes(x = rsp_index, y = depth_from_surface, group = sample_id, color = CBR_id)) +
   geom_path(linewidth = 0.75) +
-  #geom_vline(data = test3_means, aes(xintercept = mean_rsp), color = "black", linetype = "dashed", linewidth = 1) +
+  #geom_vline(data = test0_means, aes(xintercept = mean_rsp), color = "black", linetype = "dashed", linewidth = 1) +
   geom_segment(data = c17_segment_data,
                aes(x = x, xend = xend, y = y, yend = yend),
                color = "darkred", 
@@ -287,30 +292,32 @@ rspdata %>%
   #scale_linetype_manual(name = "",
                         #values = c("Minimum RSP\nRequired for\nAircraft Load\nof 500,000 lbs" = "solid", "Mean RSP" = "dashed")) +
   scale_color_manual(values = natparks.pals("Yellowstone", 5)) +
-  facet_wrap(~station, switch = "x") +
-  scale_y_continuous(trans = "reverse", minor_breaks = seq(0, 400, 10)) +
-  scale_x_continuous(position = "top", limit = c(0, 200), minor_breaks = seq(0, 200, 5)) +
+  facet_wrap(~station, strip.position = "bottom") +
+  scale_y_continuous(trans = "reverse", name = "Penetration Depth (mm)", 
+                     sec.axis = sec_axis(~ . / 25.4, name = "Penetration Depth (in)")) +
+  scale_x_continuous(position = "top", limit = c(0, 200)) +
   xlab("RSP Index") +
-  ylab("Depth from Surface (mm)") +
   labs(color = "Corresponding\nCBR Test\nLocation") +
   theme_bw() +
   theme(axis.text = element_text(size = 15),
         axis.title = element_text(size = 15),
         legend.text = element_text(size = 15),
         legend.title = element_text(size = 15),
-        strip.text = element_text(size = 15))
+        strip.text = element_text(size = 15),
+        axis.title.y.right = element_text(angle = 90))
+        #panel.grid.major = element_line(color = "grey80"))
 
 # Test 4
 test4_means <- station_test_mean_unfiltered %>% 
   filter(test == "Test 4")
 
 rspdata %>% 
-  mutate(CBR_rep = paste(CBR_id, rep)) %>% 
+  mutate(CBR_rep = paste(CBR_id, rep)) %>%
   filter(test == "Test 4") %>% 
   #View()
   ggplot(aes(x = rsp_index, y = depth_from_surface, group = sample_id, color = CBR_id)) +
   geom_path(linewidth = 0.75) +
-  #geom_vline(data = test4_means, aes(xintercept = mean_rsp), color = "black", linetype = "dashed", linewidth = 1) +
+  #geom_vline(data = test0_means, aes(xintercept = mean_rsp), color = "black", linetype = "dashed", linewidth = 1) +
   geom_segment(data = c17_segment_data,
                aes(x = x, xend = xend, y = y, yend = yend),
                color = "darkred", 
@@ -319,18 +326,20 @@ rspdata %>%
   #scale_linetype_manual(name = "",
                         #values = c("Minimum RSP\nRequired for\nAircraft Load\nof 500,000 lbs" = "solid", "Mean RSP" = "dashed")) +
   scale_color_manual(values = natparks.pals("Yellowstone", 5)) +
-  facet_wrap(~station, switch = "x") +
-  scale_y_continuous(trans = "reverse", minor_breaks = seq(0, 400, 10)) +
-  scale_x_continuous(position = "top", limit = c(0, 200), minor_breaks = seq(0, 200, 5)) +
+  facet_wrap(~station, strip.position = "bottom") +
+  scale_y_continuous(trans = "reverse", name = "Penetration Depth (mm)", 
+                     sec.axis = sec_axis(~ . / 25.4, name = "Penetration Depth (in)")) +
+  scale_x_continuous(position = "top", limit = c(0, 200)) +
   xlab("RSP Index") +
-  ylab("Depth from Surface (mm)") +
   labs(color = "Corresponding\nCBR Test\nLocation") +
   theme_bw() +
   theme(axis.text = element_text(size = 15),
         axis.title = element_text(size = 15),
         legend.text = element_text(size = 15),
         legend.title = element_text(size = 15),
-        strip.text = element_text(size = 15))
+        strip.text = element_text(size = 15),
+        axis.title.y.right = element_text(angle = 90))
+        #panel.grid.major = element_line(color = "grey80"))
 ```
 
 ### Mean RSP for Correlation
@@ -402,7 +411,7 @@ visual_mean_rsp %>% #### Use this one in TR since it used the "visual average" v
   scale_color_manual(values = group_colors) +
   scale_x_continuous(limits = c(0,35), breaks = seq(0, 35, by = 5)) +
   xlab("Time Duration (hr)") +
-  ylab("Average RSP across depth (0-400mm)") +
+  ylab("Mean RSP") +
   labs(color = "Test Station") +
   theme_bw() +
   theme(axis.text = element_text(size = 15),
