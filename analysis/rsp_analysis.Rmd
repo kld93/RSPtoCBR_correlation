@@ -13,7 +13,7 @@ editor_options:
 library(tidyverse)
 #install.packages("NatParksPalettes")
 library(NatParksPalettes)
-#install.packages("ggpmisc")  # Only once
+#install.packages("ggpmisc")
 library(ggpmisc)
 ```
 
@@ -60,7 +60,7 @@ rspdata %>%
   mutate(CBR_rep = paste(CBR_id, rep)) %>% 
   ggplot(aes(x = rsp_index, y = depth_from_surface, group = sample_id, color = CBR_id)) +
   geom_path(linewidth = 0.75) +
-  geom_vline(data = station_test_mean_unfiltered, aes(xintercept = mean_rsp), color = "black", linetype = "dashed", linewidth = 1) +
+  #geom_vline(data = station_test_mean_unfiltered, aes(xintercept = mean_rsp), color = "black", linetype = "dashed", linewidth = 1) +
   geom_segment(data = c17_segment_data,
                aes(x = x, xend = xend, y = y, yend = yend),
                color = "darkred", 
@@ -498,21 +498,91 @@ ggplot(means_for_corr, aes(x = mean_rsp, y = CBR)) +
   geom_point(aes(color = station), size = 3) +
   #scale_x_log10() +
   #scale_y_log10() +
-  scale_color_manual(values = group_colors) +
+  scale_color_manual(values = STA_colors) + #(use group_colors for the TR)
   geom_smooth(method = "lm", se = FALSE, color = "black", linetype = "dashed") +
   #annotate("text", x = 35, y = 18, label = paste("R² =", round(r2, 2)), size = 6, hjust = 4) +
   xlab("RSP") +
   ylab("CBR") +
-  labs(color = "Test Station:") +
+  labs(color = "Station") +
   theme_bw() +
   theme(axis.text = element_text(size = 15),
         axis.title = element_text(size = 15),
         legend.text = element_text(size = 15),
         legend.title = element_text(size = 15),
-        legend.position = "top",
         strip.text = element_text(size = 15))
 ### the R2 = 0.44 (add this manually in ppt)
 ```
+
+## remake CBR and RSP plots for manuscript
+```{r}
+cbrdata %>% 
+  mutate(replicate = paste0("R", replicate)) %>% 
+  mutate(station_CBRrep = paste(station, replicate, sep = "-")) %>% 
+  ggplot(aes(x = time_hours, y = CBR, group = station_CBRrep, color = station_CBRrep)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 3) +
+  scale_color_manual(values = natparks.pals("Yellowstone", 6)) +
+  xlab("Time (hr)") +
+  ylab("CBR") +
+  labs(color = "Station \nReplicate") +
+  theme_bw() +
+  theme(axis.text = element_text(size = 15),
+        axis.title = element_text(size = 15),
+        legend.text = element_text(size = 15),
+        legend.title = element_text(size = 15),
+        strip.text = element_text(size = 15))
+
+STA_colors <- c("STA1" = "#CB7223", "STA2" = "#0067A2") 
+
+## CBR trend lines
+meancbrdata %>% 
+  mutate(station = str_sub(station_test, 1, 4)) %>%
+  ggplot(aes(x = hours_avg, y = CBR, group = station, color = station)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 3) +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dotted") +
+  #stat_poly_eq(
+    #aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")),
+    #formula = y ~ x,
+    #parse = TRUE) +
+  scale_color_manual(values = STA_colors) +
+  xlab("Time (hr)") +
+  ylab("CBR") +
+  labs(color = "Station") +
+  theme_bw() +
+  theme(axis.text = element_text(size = 15),
+        axis.title = element_text(size = 15),
+        legend.text = element_text(size = 15),
+        legend.title = element_text(size = 15),
+        strip.text = element_text(size = 15))
+
+## RSP trend lines
+visual_mean_rsp %>% #### Use this one in TR since it used the "visual average" values
+  ggplot(aes(x = hours_avg, y = visual_mean_rsp, group = station, color = station)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 3) +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dotted") +
+  #stat_poly_eq(
+    #aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")),
+    #formula = y ~ x,
+    #parse = TRUE) +
+  scale_color_manual(values = STA_colors) +
+  scale_x_continuous(limits = c(0,35), breaks = seq(0, 35, by = 5)) +
+  xlab("Time (hr)") +
+  ylab("Mean RSP") +
+  labs(color = "Station") +
+  theme_bw() +
+  theme(axis.text = element_text(size = 15),
+        axis.title = element_text(size = 15),
+        legend.text = element_text(size = 15),
+        legend.title = element_text(size = 15),
+        strip.text = element_text(size = 15))
+## stat_poly_eq gives the following equations (add them manually in ppt to match Margie's plot)
+#### green: y = 26.7 + 0.199x (R2 = 0.62)
+#### blue: y = 33.5 + 0.631x (R2 = 0.84)
+```
+
+
 
 
 
