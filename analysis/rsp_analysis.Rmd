@@ -411,7 +411,7 @@ visual_mean_rsp %>% #### Use this one in TR since it used the "visual average" v
   scale_color_manual(values = group_colors) +
   scale_x_continuous(limits = c(0,35), breaks = seq(0, 35, by = 5)) +
   xlab("Time Duration (hr)") +
-  ylab("Mean RSP") +
+  ylab("Mean RSP Index") +
   labs(color = "Test Station") +
   theme_bw() +
   theme(axis.text = element_text(size = 15),
@@ -422,6 +422,32 @@ visual_mean_rsp %>% #### Use this one in TR since it used the "visual average" v
 ## stat_poly_eq gives the following equations (add them manually in ppt to match Margie's plot)
 #### green: y = 26.7 + 0.199x (R2 = 0.62)
 #### blue: y = 33.5 + 0.631x (R2 = 0.84)
+
+### George comment on TR: look into the difference between STA 1 and STA 2
+no_test_0 <- visual_mean_rsp %>% 
+  filter(!station_test == "STA1_test0") %>% 
+  
+
+no_test_0 %>% 
+  ggplot(aes(x = hours_avg, y = visual_mean_rsp, group = station, color = station)) +
+  geom_line(linewidth = 1.25) +
+  geom_point(size = 3) +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dotted") +
+  stat_poly_eq(
+    aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")),
+    formula = y ~ x,
+    parse = TRUE) +
+  scale_color_manual(values = group_colors) +
+  scale_x_continuous(limits = c(0,35), breaks = seq(0, 35, by = 5)) +
+  xlab("Time Duration (hr)") +
+  ylab("Mean RSP Index") +
+  labs(color = "Test Station") +
+  theme_bw() +
+  theme(axis.text = element_text(size = 15),
+        axis.title = element_text(size = 15),
+        legend.text = element_text(size = 15),
+        legend.title = element_text(size = 15),
+        strip.text = element_text(size = 15))
 ```
 
 #### Correlation with mean RSP from points (10 to 10, CBR to RSP)
@@ -498,11 +524,13 @@ ggplot(means_for_corr, aes(x = mean_rsp, y = CBR)) +
   geom_point(aes(color = station), size = 3) +
   #scale_x_log10() +
   #scale_y_log10() +
-  scale_color_manual(values = STA_colors) + #(use group_colors for the TR)
+  scale_color_manual(values = group_colors) + #(use group_colors for the TR)
   geom_smooth(method = "lm", se = FALSE, color = "black", linetype = "dashed") +
   #annotate("text", x = 35, y = 18, label = paste("R² =", round(r2, 2)), size = 6, hjust = 4) +
-  xlab("RSP") +
+  xlab("RSP Index") +
   ylab("CBR") +
+  #xlim(0, 45) + (making the scale the same helps see that the trend line equation is correct)
+  #ylim(0, 45) +
   labs(color = "Station") +
   theme_bw() +
   theme(axis.text = element_text(size = 15),
@@ -511,6 +539,7 @@ ggplot(means_for_corr, aes(x = mean_rsp, y = CBR)) +
         legend.title = element_text(size = 15),
         strip.text = element_text(size = 15))
 ### the R2 = 0.44 (add this manually in ppt)
+### y = 0.46x-3.8
 ```
 
 ## remake CBR and RSP plots for manuscript
@@ -569,7 +598,7 @@ visual_mean_rsp %>% #### Use this one in TR since it used the "visual average" v
   scale_color_manual(values = STA_colors) +
   scale_x_continuous(limits = c(0,35), breaks = seq(0, 35, by = 5)) +
   xlab("Time (hr)") +
-  ylab("Mean RSP") +
+  ylab("Mean RSP Index") +
   labs(color = "Station") +
   theme_bw() +
   theme(axis.text = element_text(size = 15),
@@ -580,6 +609,26 @@ visual_mean_rsp %>% #### Use this one in TR since it used the "visual average" v
 ## stat_poly_eq gives the following equations (add them manually in ppt to match Margie's plot)
 #### green: y = 26.7 + 0.199x (R2 = 0.62)
 #### blue: y = 33.5 + 0.631x (R2 = 0.84)
+
+## correlation
+ggplot(means_for_corr, aes(x = mean_rsp, y = CBR)) +
+  geom_point(aes(color = station), size = 3) +
+  #scale_x_log10() +
+  #scale_y_log10() +
+  scale_color_manual(values = STA_colors) + #(use group_colors for the TR)
+  geom_smooth(method = "lm", se = FALSE, color = "black", linetype = "dashed") +
+  #annotate("text", x = 35, y = 18, label = paste("R² =", round(r2, 2)), size = 6, hjust = 4) +
+  xlab("RSP Index") +
+  ylab("CBR") +
+  #xlim(0, 45) + (making the scale the same helps see that the trend line equation is correct)
+  #ylim(0, 45) +
+  labs(color = "Station") +
+  theme_bw() +
+  theme(axis.text = element_text(size = 15),
+        axis.title = element_text(size = 15),
+        legend.text = element_text(size = 15),
+        legend.title = element_text(size = 15),
+        strip.text = element_text(size = 15))
 ```
 
 
