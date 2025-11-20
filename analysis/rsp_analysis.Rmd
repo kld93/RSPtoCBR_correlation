@@ -56,6 +56,8 @@ station_test_mean_unfiltered <- rspdata %>%
   mutate(test = ifelse(test == "test5", "Test 5", test))
 
 # Spaghetti Plot
+colorblind_colors2 <- c("CBR1" = "#E69F00", "CBR2" = "#56B4E9", "CBR3" = "#009E73", "CBR5" = "#F0E442", "CBR4" = "#CC79A7") 
+
 rspdata %>% 
   mutate(CBR_rep = paste(CBR_id, rep)) %>% 
   ggplot(aes(x = rsp_index, y = depth_from_surface, group = sample_id, color = CBR_id)) +
@@ -63,12 +65,12 @@ rspdata %>%
   #geom_vline(data = station_test_mean_unfiltered, aes(xintercept = mean_rsp), color = "black", linetype = "dashed", linewidth = 1) +
   geom_segment(data = c17_segment_data,
                aes(x = x, xend = xend, y = y, yend = yend),
-               color = "darkred", 
+               color = "red3", 
                inherit.aes = FALSE,
                linewidth = 0.75) +
   #scale_linetype_manual(name = "",
                         #values = c("Minimum RSP\nRequired for\nAircraft Load\nof 500,000 lbs" = "solid", "Mean RSP" = "dashed")) +
-  scale_color_manual(values = natparks.pals("Charmonix", 5)) +
+  scale_color_manual(values = colorblind_colors2) +
   facet_grid(station~test, switch = "x") +
   scale_y_continuous(trans = "reverse") +
   scale_x_continuous(position = "top") +
@@ -543,13 +545,18 @@ ggplot(means_for_corr, aes(x = mean_rsp, y = CBR)) +
 
 ## remake CBR and RSP plots for manuscript
 ```{r}
+library(ggthemes)
+
+colorblind_colors <- c("STA1-R1" = "#000000", "STA1-R2" = "#E69F00", "STA1-R3" = "#56B4E9", "STA2-R1" = "#009E73", "STA2-R2" = "#F0E442", "STA2-R3" = "#CC79A7") 
+
 cbrdata %>% 
   mutate(replicate = paste0("R", replicate)) %>% 
   mutate(station_CBRrep = paste(station, replicate, sep = "-")) %>% 
   ggplot(aes(x = time_hours, y = CBR, group = station_CBRrep, color = station_CBRrep)) +
   geom_line(linewidth = 1) +
   geom_point(size = 3) +
-  scale_color_manual(values = natparks.pals("Charmonix", 6)) +
+  #scale_color_colorblind() +
+  scale_color_manual(values = colorblind_colors) +
   xlab("Time (hr)") +
   ylab("CBR") +
   labs(color = "Station-CBR \nReplicate") +
