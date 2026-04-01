@@ -1,0 +1,30 @@
+---
+title: "untitled"
+author: "Katie L. Duggan DiDominic"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+## Load packages
+```{r}
+#install.packages("tidyverse")
+library(tidyverse)
+library(NatParksPalettes)
+
+install.packages("reticulate")
+library(reticulate)
+
+reticulate::install_python(version = "3.11") #install python
+
+py_install("pymodbus") #install pymodbus
+py_config() #check that python works
+```
+
+
+
+
+
+
+
