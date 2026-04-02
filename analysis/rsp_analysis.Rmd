@@ -508,7 +508,7 @@ means_for_corr <- full_join(meancbrdata, rsp_means_for_corr, by = "station_test"
 means_for_corr %>% ## only those relating to remaining CBR data
   ggplot(aes(x = hours_avg, y = mean_rsp, group = station, color = station)) +
   geom_line(linewidth = 1) +
-  scale_color_manual(values = selected_colors) +
+  #scale_color_manual(values = selected_colors) +
   xlab("Time since Test 0 (hours)") +
   ylab("Mean RSP across depth (0-400mm)") +
   labs(color = "Test Station") +
@@ -518,6 +518,8 @@ means_for_corr %>% ## only those relating to remaining CBR data
         legend.text = element_text(size = 12),
         legend.title = element_text(size = 12),
         strip.text = element_text(size = 12))
+
+write.csv(means_for_corr, "/Users/u4rrnkld/OneDrive - US Army Corps of Engineers/Documents/RSPtoCBR_correlation/data/means_for_corr_2025.csv", row.names = FALSE)
 ```
 
 ## remake CBR and RSP plots for manuscript

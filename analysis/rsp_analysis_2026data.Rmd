@@ -53,9 +53,9 @@ corrected_rsp_cbr_26 <- left_join(rsp_2026, cbr_2026, by = c("sample_id", "lane"
   mutate(correct_station = sub("^[^_]*_", "", correct_lane_station)) %>% 
   select(c(correct_sample_id, correct_lane, correct_station, correct_lane_station, rsp_replicate, rsp_date_time, depth_from_surface, rsp_index, cbr_date, cbr_time, cbr_date_time, hours_post_construction, CBR)) %>% 
   rename(replicate = rsp_replicate) %>% 
-  mutate(replicate = ifelse(replicate == 1, "r1", replicate)) %>% 
-  mutate(replicate = ifelse(replicate == 2, "r2", replicate)) %>% 
-  mutate(replicate = ifelse(replicate == 3, "r3", replicate)) %>% 
+  mutate(replicate = ifelse(replicate == 1, "R1", replicate)) %>% 
+  mutate(replicate = ifelse(replicate == 2, "R2", replicate)) %>% 
+  mutate(replicate = ifelse(replicate == 3, "R3", replicate)) %>% 
   mutate(dist_ramp_end = ifelse(correct_station == "STA01", 7, "")) %>% 
   mutate(dist_ramp_end = ifelse(correct_station == "STA02", 10, dist_ramp_end)) %>%
   mutate(dist_ramp_end = ifelse(correct_station == "STA03", 13, dist_ramp_end)) %>%
@@ -66,7 +66,8 @@ corrected_rsp_cbr_26 <- left_join(rsp_2026, cbr_2026, by = c("sample_id", "lane"
   mutate(dist_ramp_end = ifelse(correct_station == "STA08", 28, dist_ramp_end)) %>%
   mutate(dist_ramp_end = ifelse(correct_station == "STA09", 31, dist_ramp_end)) %>%
   mutate(dist_ramp_end = ifelse(correct_station == "STA10", 34, dist_ramp_end)) %>%
-  mutate(dist_ramp_end = ifelse(correct_station == "STA11", 37, dist_ramp_end))
+  mutate(dist_ramp_end = ifelse(correct_station == "STA11", 37, dist_ramp_end)) %>% 
+  mutate(dist_ramp_end = as.numeric(dist_ramp_end))
 ```
 
 ## Analyze
@@ -145,7 +146,6 @@ rsp_mean_over_depth <- corrected_rsp_cbr_26 %>%
   mutate(correct_station = substr(correct_sample_id, 4, 8)) 
 
 corrected_rsp_cbr_26 %>% 
-  #mutate(CBR_rep = paste(CBR_id, rep)) %>% 
   ggplot(aes(x = rsp_index, y = depth_from_surface, group = correct_sample_id, color = replicate)) +
   geom_path(linewidth = 0.75) +
   geom_point() +
@@ -166,110 +166,52 @@ corrected_rsp_cbr_26 %>%
         legend.title = element_text(size = 12),
         strip.text = element_text(size = 12))
 
-####### plot of mean RSPs (all data)
+####### plot of mean RSPs (all data) over snow runway surface
 rsp_cbr_2026 <- rsp_mean_over_depth %>% 
   select(-c(correct_lane, correct_station)) %>% 
   full_join(corrected_rsp_cbr_26, by = "correct_sample_id")
-
-visual_mean_rsp <- mean_rsp_cbr %>% 
-  select(-mean_rsp) %>% 
-  mutate(visual_mean_rsp = c(25, 29.5, 34, 30, 32, 30, 41.7, 45.3, 48.3, 54))
-
-group_colors <- c("SW" = "darkgreen", "SE" = "deepskyblue")
 
 rsp_cbr_2026 %>% 
   ggplot(aes(x = dist_ramp_end, y = mean_rsp, group = correct_lane_station, color = hours_post_construction)) +
   geom_line(linewidth = 1.25) +
   geom_point(size = 3, aes(shape = replicate)) +
   geom_smooth(method = "lm", se = FALSE, linetype = "dotted") +
-  #stat_poly_eq(
-    #aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")),
-    #formula = y ~ x,
-    #parse = TRUE) +
-  #scale_color_manual(values = group_colors) +
-  #scale_x_continuous(limits = c(0,35), breaks = seq(0, 35, by = 5)) +
+  #scale_color_distiller(palette = "BrBG") +
+  scale_color_gradientn(colors = c("#082544", "#1E547D", "#79668C", "#DE3C37", "#F2DC7E")) +
+  #scale_color_continuous(values = natparks.pals("Yellowstone", 5)) +
+  scale_x_continuous(limits = c(0,40), breaks = seq(0, 35, by = 5)) +
   facet_grid(factor(correct_lane, levels = c("SW", "SE"))~.) + 
   xlab("Distance from End (ft)") +
-  ylab("Average RSP across depth (0-400mm)") +
-  #labs(color = "Replicate") +
+  ylab("RSP mean across depth (0-400mm)") +
+  labs(color = "Days Post Construction", shape = "RSP Replicate") +
   theme_bw() +
   theme(axis.text = element_text(size = 15),
         axis.title = element_text(size = 15),
         legend.text = element_text(size = 15),
         legend.title = element_text(size = 15),
         strip.text = element_text(size = 15))
-## stat_poly_eq gives the following equations (add them manually in ppt to match Margie's plot)
-#### green: y = 25.8 + 0.21x (R2 = 0.81)
-#### blue: y = 33 + 0.57x (R2 = 0.89)
-
-visual_mean_rsp %>% #### Use this one in TR/manuscript since it uses the "visual average" values
-  ggplot(aes(x = hours_avg, y = visual_mean_rsp, group = station, color = station)) +
-  geom_line(linewidth = 1.25) +
-  geom_point(size = 3) +
-  geom_smooth(method = "lm", se = FALSE, linetype = "dotted") +
-  #stat_poly_eq(
-    #aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")),
-    #formula = y ~ x,
-    #parse = TRUE) +
-  scale_color_manual(values = group_colors) +
-  scale_x_continuous(limits = c(0,35), breaks = seq(0, 35, by = 5)) +
-  xlab("Time Duration (hr)") +
-  ylab("Mean RSP Index") +
-  labs(color = "Test Station") +
-  theme_bw() +
-  theme(axis.text = element_text(size = 15),
-        axis.title = element_text(size = 15),
-        legend.text = element_text(size = 15),
-        legend.title = element_text(size = 15),
-        strip.text = element_text(size = 15))
-## stat_poly_eq gives the following equations (add them manually in ppt to match Margie's plot)
-#### green: y = 26.7 + 0.199x (R2 = 0.62)
-#### blue: y = 33.5 + 0.631x (R2 = 0.84)
 ```
 
 #### Correlation with mean RSP from points (10 to 10, CBR to RSP)
 ```{r}
-rsp_means_for_corr <- rspdata %>% #filter for RSPs relating to the CBRs that Margie kept
-  filter(!(station == "STA1" & test == "Test 0" & CBR_id == "CBR4")) %>% # remove CBR4 for STA1/test0
-  filter(!(station == "STA1" & test == "Test 1" & CBR_id == "CBR3")) %>% # remove CBR3 for STA1/test1
-  filter(!(station == "STA1" & test == "Test 1" & CBR_id == "CBR4")) %>% # remove CBR4 for STA1/test1
-  filter(!(station == "STA1" & test == "Test 2" & CBR_id == "CBR1")) %>% # remove CBR1 for STA1/test2
-  filter(!(station == "STA1" & test == "Test 3" & CBR_id == "CBR3")) %>% # remove CBR3 for STA1/test3
-  filter(!(station == "STA2" & test == "Test 2" & CBR_id == "CBR1")) %>% # remove CBR1 for STA2/test2
-  filter(between(depth_from_surface, 50, 200)) %>% #keep 50mm through 200mm)
-  group_by(lane_station) %>%
-  summarize(mean_rsp = mean(rsp_index)) %>% 
-  mutate(station = str_sub(lane_station, 1, 4)) %>% 
-  mutate(test = str_sub(lane_station, 6, 10)) %>%
-  mutate(test = ifelse(test == "test0", "Test 0", test)) %>% 
-  mutate(test = ifelse(test == "test1", "Test 1", test)) %>% 
-  mutate(test = ifelse(test == "test2", "Test 2", test)) %>% 
-  mutate(test = ifelse(test == "test3", "Test 3", test)) %>% 
-  mutate(test = ifelse(test == "test4", "Test 4", test)) %>% 
-  mutate(test = ifelse(test == "test5", "Test 5", test))
+rsp_means_for_plot <- rsp_cbr_2026 %>% 
+  filter(between(depth_from_surface, 50, 200)) #keep 50mm through 200mm
 
-rspdata %>% 
-  filter(!(station == "STA1" & test == "Test 0" & CBR_id == "CBR4")) %>% # remove CBR4 for STA1/test0
-  filter(!(station == "STA1" & test == "Test 1" & CBR_id == "CBR3")) %>% # remove CBR3 for STA1/test1
-  filter(!(station == "STA1" & test == "Test 1" & CBR_id == "CBR4")) %>% # remove CBR4 for STA1/test1
-  filter(!(station == "STA1" & test == "Test 2" & CBR_id == "CBR1")) %>% # remove CBR1 for STA1/test2
-  filter(!(station == "STA1" & test == "Test 3" & CBR_id == "CBR3")) %>% # remove CBR3 for STA1/test3
-  filter(!(station == "STA2" & test == "Test 2" & CBR_id == "CBR1")) %>% # remove CBR1 for STA2/test2
-  filter(between(depth_from_surface, 50, 200)) %>% #keep 50mm through 200mm)
-  mutate(CBR_rep = paste(CBR_id, rep)) %>% 
-  ggplot(aes(x = rsp_index, y = depth_from_surface, group = CBR_id, color = CBR_id)) +
-  #geom_path(linewidth = 0.75) +
+corrected_rsp_cbr_26 %>% 
+  filter(between(depth_from_surface, 50, 200)) %>%
+  ggplot(aes(x = rsp_index, y = depth_from_surface, group = correct_sample_id, color = replicate)) +
+  geom_path(linewidth = 0.75) +
   geom_point() +
-  geom_vline(data = rsp_means_for_corr, aes(xintercept = mean_rsp), color = "black", linetype = "dashed", linewidth = 1) +
+  geom_vline(data = rsp_means_for_plot, aes(xintercept = mean_rsp), color = "black", linetype = "dashed", linewidth = 1) +
   #scale_linetype_manual(name = "Minimum Required \nRSP for Aircraft Load",
                         #values = c("500,000 lbs" = "solid")) +
-  scale_color_manual(values = natparks.pals("Yellowstone", 5)) +
-  facet_grid(station~test, switch = "x") +
+  scale_color_manual(values = colorblind_colors2) +
+  facet_grid(factor(correct_lane, levels = c("SW", "SE"))~correct_station, switch = "x") + 
   scale_y_continuous(trans = "reverse") +
   scale_x_continuous(position = "top") +
   xlab("RSP Index") +
   ylab("Depth from Surface (mm)") +
-  labs(color = "Corresponding\nCBR") +
+  #labs(color = "Corresponding\nCBR") +
   theme_bw() +
   theme(axis.text = element_text(size = 12),
         axis.title = element_text(size = 12),
@@ -277,241 +219,30 @@ rspdata %>%
         legend.title = element_text(size = 12),
         strip.text = element_text(size = 12))
 
-means_for_corr <- full_join(meancbrdata, rsp_means_for_corr, by = "lane_station")
+rsp_mean_filtered <- rsp_means_for_plot %>% #get dataset with 66 RSP values (50-200mm)
+  group_by(correct_sample_id) %>% 
+  summarize(mean_rsp = mean(mean_rsp)) %>% 
+  mutate(correct_lane = str_extract(correct_sample_id, "^[^_]+")) %>% 
+  mutate(correct_station = substr(correct_sample_id, 4, 8)) %>% 
+  mutate(replicate = substr(correct_sample_id, 10, 10)) %>% 
+  mutate(replicate = ifelse(replicate == 1, "R1", replicate)) %>% 
+  mutate(replicate = ifelse(replicate == 2, "R2", replicate)) %>% 
+  mutate(replicate = ifelse(replicate == 3, "R3", replicate))
 
-means_for_corr %>% ## only those relating to remaining CBR data
-  ggplot(aes(x = hours_avg, y = mean_rsp, group = station, color = station)) +
-  geom_line(linewidth = 1) +
-  scale_color_manual(values = selected_colors) +
-  xlab("Time since Test 0 (hours)") +
-  ylab("Mean RSP across depth (0-400mm)") +
-  labs(color = "Test Station") +
-  theme_bw() +
-  theme(axis.text = element_text(size = 12),
-        axis.title = element_text(size = 12),
-        legend.text = element_text(size = 12),
-        legend.title = element_text(size = 12),
-        strip.text = element_text(size = 12))
+cbr_mean <- rsp_means_for_plot %>% 
+  group_by(correct_sample_id) %>% 
+  summarize(mean_cbr = mean(CBR))
+  
+means_for_corr_2026 <- full_join(rsp_mean_filtered, cbr_mean, by = "correct_sample_id")
 ```
 
-## remake CBR and RSP plots for manuscript
-#### Station-CBR replicates plot
-```{r}
-colorblind_colors <- c("STA1-R1" = "#000000", "STA1-R2" = "#E69F00", "STA1-R3" = "#56B4E9", "STA2-R1" = "#009E73", "STA2-R2" = "#F0E442", "STA2-R3" = "#CC79A7") 
 
-cbrdata %>% 
-  mutate(replicate = paste0("R", replicate)) %>% 
-  mutate(station_CBRrep = paste(station, replicate, sep = "-")) %>% 
-  ggplot(aes(x = time_hours, y = CBR, group = station_CBRrep, color = station_CBRrep)) +
-  geom_line(linewidth = 1) +
-  geom_point(size = 3) +
-  #scale_color_colorblind() +
-  scale_color_manual(values = colorblind_colors) +
-  xlab("Time (hr)") +
-  ylab("CBR") +
-  labs(color = "Station-CBR \nReplicate") +
-  theme_bw() +
-  theme(axis.text = element_text(size = 15),
-        axis.title = element_text(size = 15),
-        legend.text = element_text(size = 15),
-        legend.title = element_text(size = 15),
-        strip.text = element_text(size = 15))
-```
-
-#### CBR for each station with trendlines
-```{r}
-STA_colors <- c("STA1" = "#CB7223", "STA2" = "#0067A2") 
-
-## CBR trend lines
-mean_sd_cbr <- cbrdata %>% 
-  group_by(lane_station) %>% 
-  summarize(CBR_mean = mean(CBR, na.rm = TRUE),
-            CBR_sd = sd(CBR, na.rm = TRUE),
-            hours_avg = mean(time_hours),
-            .groups = "drop")
-
-mean_sd_cbr_combined <- full_join(cbrdata, mean_sd_cbr, by = "lane_station")
-
-cbr_trend_eq_1 <- paste0("y = ", 0.152, "x + ", 8.39)
-cbr_trend_eq_2 <- paste0("y = ", 0.356, "x + ", 7.43)
-
-mean_sd_cbr_combined %>% 
-  mutate(station = str_sub(lane_station, 1, 4)) %>%
-  ggplot(aes(x = hours_avg, y = CBR_mean, group = station, color = station)) +
-  geom_line(linewidth = 1) +
-  geom_point(size = 3) +
-  geom_abline(slope = 0.15221, intercept = 8.38959, linetype = "dashed", linewidth = 1, color = "#CB7223") + #station 1 line
-  annotate("text", x = 16, y = 9, label = cbr_trend_eq_1, color = "#CB7223", size = 5.5) + #station 1 eq
-  annotate("text", x = 16, y = 8, label = "R^2 == 0.959", parse = TRUE, color = "#CB7223", size = 5.5) + #station 1 r2
-  geom_abline(slope = 0.35575, intercept = 7.43043, linetype = "dashed", linewidth = 1, color = "#0067A2") + #station 2 line
-  annotate("text", x = 13, y = 15, label = cbr_trend_eq_2, color = "#0067A2", size = 5.5) + #station 2 eq
-  annotate("text", x = 13, y = 14, label = "R^2 == 0.954", parse = TRUE, color = "#0067A2", size = 5.5) + #station 2 r2
-  #geom_smooth(method = "lm", se = FALSE, linetype = "dotted") +
-  geom_errorbar(aes(ymin = CBR-CBR_sd, ymax = CBR+CBR_sd)) +
-  scale_color_manual(values = STA_colors) +
-  xlab("Time (hr)") +
-  ylab("CBR") +
-  labs(color = "Station") +
-  theme_bw() +
-  theme(axis.text = element_text(size = 15),
-        axis.title = element_text(size = 15),
-        legend.text = element_text(size = 15),
-        legend.title = element_text(size = 15),
-        legend.position = "inside",
-        legend.position.inside = c(0.1, 0.875),
-        strip.text = element_text(size = 15))
-
-#### per reviewer comment: try other non-linear fits
-cbr_sta1 <- mean_sd_cbr %>% 
-  filter(str_starts(lane_station, "STA1"))
-
-cbr_sta2 <- mean_sd_cbr %>% 
-  filter(str_starts(lane_station, "STA2"))
-
-# sta1 linear
-mod_cbr_sta1_lm = lm(CBR_mean ~ hours_avg, data=cbr_sta1)
-summary(mod_cbr_sta1_lm)
-raintest(mod_cbr_sta1_lm)
-
-ggplot(mod_cbr_sta1_lm, aes(x = .fitted, y = .resid)) +
-  geom_point() +
-  geom_hline(yintercept = 0, color = "red", linetype = "dashed", size = 1) +
-  labs(title = "Residuals vs. Fitted Values Plot (Simple Method)",
-       x = "Fitted Values",
-       y = "Residuals") +
-  theme_minimal()
-
-#sta1 exponential
-mod_cbr_sta1_exp = lm(log(CBR_mean) ~ hours_avg, data=cbr_sta1)
-summary(mod_cbr_sta1_exp)
-
-#sta1 power
-cbr_sta1_pow <- cbr_sta1 %>% 
-  mutate(time_hours_adj = ifelse(hours_avg == 0, 0.01, hours_avg)) #change 0s to 0.01 (36 seconds) to avoid log(0) error
-
-mod_cbr_sta1_pow = lm(log(CBR_mean) ~ log(time_hours_adj), data=cbr_sta1_pow)
-summary(mod_cbr_sta1_pow)
-
-#sta2 linear
-mod_cbr_sta2_lm = lm(CBR_mean ~ hours_avg, data=cbr_sta2)
-summary(mod_cbr_sta2_lm)
-raintest(mod_cbr_sta2_lm)
-
-ggplot(mod_cbr_sta2_lm, aes(x = .fitted, y = .resid)) +
-  geom_point() +
-  geom_hline(yintercept = 0, color = "red", linetype = "dashed", size = 1) +
-  labs(title = "Residuals vs. Fitted Values Plot (Simple Method)",
-       x = "Fitted Values",
-       y = "Residuals") +
-  theme_minimal()
-
-#sta2 exponential
-mod_cbr_sta2_exp = lm(log(CBR_mean) ~ hours_avg, data=cbr_sta2)
-summary(mod_cbr_sta2_exp)
-
-#sta2 power
-cbr_sta2_pow <- cbr_sta2 %>% 
-  mutate(time_hours_adj = ifelse(hours_avg == 0, 0.01, hours_avg))
-
-mod_cbr_sta2_pow = lm(log(CBR_mean) ~ log(time_hours_adj), data=cbr_sta2_pow)
-summary(mod_cbr_sta2_pow)
-```
-
-#### RSP for each station with trendlines
-```{r}
-## RSP trend lines
-rsp_trend_eq_1 <- paste0("y = ", 0.199, "x + ", 26.7)
-rsp_trend_eq_2 <- paste0("y = ", 0.631, "x + ", 33.5)
-
-visual_mean_rsp %>% #### Use this one in TR since it used the "visual average" values
-  ggplot(aes(x = hours_avg, y = visual_mean_rsp, group = station, color = station)) +
-  geom_line(linewidth = 1) +
-  geom_point(size = 3) +
-  geom_abline(slope = 0.19851, intercept = 26.65791, linetype = "dashed", linewidth = 1, color = "#CB7223") + #station 1 line
-  annotate("text", x = 20, y = 28.5, label = rsp_trend_eq_1, color = "#CB7223", size = 5.5) + #station 1 eq
-  annotate("text", x = 20, y = 27, label = "R^2 == 0.624", parse = TRUE, color = "#CB7223", size = 5.5) + #station 1 r2
-  geom_abline(slope = 0.6308, intercept = 33.4522, linetype = "dashed", linewidth = 1, color = "#0067A2") + #station 2 line
-  annotate("text", x = 14, y = 47, label = rsp_trend_eq_2, color = "#0067A2", size = 5.5) + #station 2 eq
-  annotate("text", x = 14, y = 45.5, label = "R^2 == 0.845", parse = TRUE, color = "#0067A2", size = 5.5) + #station 2 r2
-  #geom_smooth(method = "lm", se = FALSE, linetype = "dotted") +
-  scale_color_manual(values = STA_colors) +
-  scale_x_continuous(limits = c(0, 32), breaks = seq(0, 32, by = 4)) +
-  xlab("Time (hr)") +
-  ylab("Mean RSP Index") +
-  labs(color = "Station") +
-  theme_bw() +
-  theme(axis.text = element_text(size = 15),
-        axis.title = element_text(size = 15),
-        legend.text = element_text(size = 15),
-        legend.title = element_text(size = 15),
-        legend.position = "inside",
-        legend.position.inside = c(0.1, 0.875),
-        strip.text = element_text(size = 15))
-## stat_poly_eq gives the following equations (add them manually in ppt to match Margie's plot)
-#### green: y = 26.7 + 0.199x (R2 = 0.62)
-#### blue: y = 33.5 + 0.631x (R2 = 0.84)
-
-#### per reviewer comment: try other non-linear fits
-rsp_sta1 <- visual_mean_rsp %>% 
-  filter(station == "STA1")
-
-rsp_sta2 <- visual_mean_rsp %>% 
-  filter(station == "STA2")
-
-# sta1 linear
-mod_rsp_sta1_lm = lm(visual_mean_rsp ~ hours_avg, data=rsp_sta1)
-summary(mod_rsp_sta1_lm)
-raintest(mod_rsp_sta1_lm)
-
-ggplot(mod_rsp_sta1_lm, aes(x = .fitted, y = .resid)) +
-  geom_point() +
-  geom_hline(yintercept = 0, color = "red", linetype = "dashed", size = 1) +
-  labs(title = "Residuals vs. Fitted Values Plot (Simple Method)",
-       x = "Fitted Values",
-       y = "Residuals") +
-  theme_minimal()
-
-#sta1 exponential
-mod_rsp_sta1_exp = lm(log(visual_mean_rsp) ~ hours_avg, data=rsp_sta1)
-summary(mod_rsp_sta1_exp)
-
-#sta1 power
-rsp_sta1_pow <- rsp_sta1 %>% 
-  mutate(time_hours_adj = ifelse(hours_avg == 0, 0.01, hours_avg)) #change 0s to 0.01 (36 seconds) to avoid log(0) error
-
-mod_rsp_sta1_pow = lm(log(visual_mean_rsp) ~ log(time_hours_adj), data=rsp_sta1_pow)
-summary(mod_rsp_sta1_pow)
-
-#sta2 linear
-mod_rsp_sta2_lm = lm(visual_mean_rsp ~ hours_avg, data=rsp_sta2)
-summary(mod_rsp_sta2_lm)
-raintest(mod_rsp_sta2_lm)
-
-ggplot(mod_rsp_sta2_lm, aes(x = .fitted, y = .resid)) +
-  geom_point() +
-  geom_hline(yintercept = 0, color = "red", linetype = "dashed", size = 1) +
-  labs(title = "Residuals vs. Fitted Values Plot (Simple Method)",
-       x = "Fitted Values",
-       y = "Residuals") +
-  theme_minimal()
-
-#sta2 exponential
-mod_rsp_sta2_exp = lm(log(visual_mean_rsp) ~ hours_avg, data=rsp_sta2)
-summary(mod_rsp_sta2_exp)
-
-#sta2 power
-rsp_sta2_pow <- rsp_sta2 %>% 
-  mutate(time_hours_adj = ifelse(hours_avg == 0, 0.01, hours_avg))
-
-mod_rsp_sta2_pow = lm(log(visual_mean_rsp) ~ log(time_hours_adj), data=rsp_sta2_pow)
-summary(mod_rsp_sta2_pow)
-```
-
-#### Correlation plot (CBR vs RSP)
+## Correlation plot (CBR vs RSP)
+#### For new (FY26) data only
 ```{r}
 ## correlation model
 #linear
-corr_lm <- lm(CBR ~ mean_rsp, data = means_for_corr)
+corr_lm <- lm(mean_cbr ~ mean_rsp, data = means_for_corr_2026)
 corr_lm_r2 <- summary(corr_lm)$r.squared
 
 ggplot(corr_lm, aes(x = .fitted, y = .resid)) +
@@ -523,30 +254,30 @@ ggplot(corr_lm, aes(x = .fitted, y = .resid)) +
   theme_minimal()
 
 #exponential
-corr_exp <- lm(log(CBR) ~ mean_rsp, data = means_for_corr)
+corr_exp <- lm(log(mean_cbr) ~ mean_rsp, data = means_for_corr_2026)
 corr_exp_r2 <- summary(corr_exp)$r.squared
 
 #power law
-corr_pow = lm(log(CBR) ~ log(mean_rsp), data=means_for_corr)
+corr_pow = lm(log(mean_cbr) ~ log(mean_rsp), data=means_for_corr_2026)
 corr_pow_r2 <- summary(corr_pow)$r.squared
 
 #model equation:
 equation_string <- paste0("y = ", 0.4600, "x - ", 3.76)
 
 ## plot
-ggplot(means_for_corr, aes(x = mean_rsp, y = CBR)) +
-  geom_point(aes(color = station), size = 3) +
+ggplot(means_for_corr_2026, aes(x = mean_rsp, y = mean_cbr)) +
+  geom_point(aes(color = correct_lane), size = 3) +
   #scale_x_log10() +
   #scale_y_log10() +
-  scale_color_manual(values = STA_colors) + #(use group_colors for the TR)
-  geom_abline(slope = 0.4600, intercept = -3.7572, linetype = "dashed", linewidth = 1) +
-  annotate("text", x = 30, y = 20, label = equation_string, color = "black", size = 5.5) +
-  annotate("text", x = 30, y = 18, label = "R^2 == 0.44", parse = TRUE, color = "black", size = 5.5) +
+  #scale_color_manual(values = STA_colors) + #(use group_colors for the TR)
+  #geom_abline(slope = 0.4600, intercept = -3.7572, linetype = "dashed", linewidth = 1) +
+  #annotate("text", x = 30, y = 20, label = equation_string, color = "black", size = 5.5) +
+  #annotate("text", x = 30, y = 18, label = "R^2 == 0.44", parse = TRUE, color = "black", size = 5.5) +
   xlab("RSP Index") +
   ylab("CBR") +
-  xlim(0, 45) + #(making the scale the same helps see that the trend line equation is correct)
-  ylim(0, 45) +
-  labs(color = "Station") +
+  xlim(0, 65) + #(making the scale the same helps see that the trend line equation is correct)
+  ylim(0, 65) +
+  labs(color = "Replicate") +
   theme_bw() +
   theme(axis.text = element_text(size = 15),
         axis.title = element_text(size = 15),
@@ -557,6 +288,80 @@ ggplot(means_for_corr, aes(x = mean_rsp, y = CBR)) +
         strip.text = element_text(size = 15))
 ```
 
+#### import data from previous year (FY25)
+```{r}
+means_for_corr_2025 <- read.csv(file = "/Users/u4rrnkld/OneDrive - US Army Corps of Engineers/Documents/RSPtoCBR_correlation/data/means_for_corr_2025.csv") %>% 
+  mutate(study_year = "FY25") %>% 
+  rename(sample_id = station_test) %>% 
+  rename(mean_cbr = CBR) %>% 
+  select(c(sample_id, mean_rsp, mean_cbr, study_year))
 
+means_for_corr_2026_yr <- means_for_corr_2026 %>% 
+  mutate(study_year = "FY26") %>% 
+  rename(sample_id = correct_sample_id) %>% 
+  select(c(sample_id, mean_rsp, mean_cbr, study_year))
+
+cumulative_data <- rbind(means_for_corr_2026_yr, means_for_corr_2025)
+
+## correlation and plot
+#linear
+corrcum_lm <- lm(mean_cbr ~ mean_rsp, data = cumulative_data)
+corrcum_lm_r2 <- summary(corrcum_lm)$r.squared
+
+ggplot(corrcum_lm, aes(x = .fitted, y = .resid)) +
+  geom_point() +
+  geom_hline(yintercept = 0, color = "red", linetype = "dashed", size = 1) +
+  labs(title = "Residuals vs. Fitted Values Plot (Simple Method)",
+       x = "Fitted Values",
+       y = "Residuals") +
+  theme_minimal()
+
+#exponential
+corrcum_exp <- lm(log(mean_cbr) ~ mean_rsp, data = cumulative_data)
+corrcum_exp_r2 <- summary(corrcum_exp)$r.squared
+
+#power law
+corrcum_pow = lm(log(mean_cbr) ~ log(mean_rsp), data=cumulative_data)
+corrcum_pow_r2 <- summary(corrcum_pow)$r.squared
+
+#model equation:
+equation_string <- paste0("y = ", 0.4600, "x - ", 3.76)
+
+## plot
+ggplot(cumulative_data, aes(x = mean_rsp, y = mean_cbr)) +
+  geom_point(aes(color = study_year), size = 3) +
+  #scale_x_log10() +
+  #scale_y_log10() +
+  #scale_color_manual(values = STA_colors) + #(use group_colors for the TR)
+  #geom_abline(slope = 0.4600, intercept = -3.7572, linetype = "dashed", linewidth = 1) +
+  #annotate("text", x = 30, y = 20, label = equation_string, color = "black", size = 5.5) +
+  #annotate("text", x = 30, y = 18, label = "R^2 == 0.44", parse = TRUE, color = "black", size = 5.5) +
+  xlab("RSP Index") +
+  ylab("CBR") +
+  xlim(0, 65) + #(making the scale the same helps see that the trend line equation is correct)
+  ylim(0, 65) +
+  labs(color = "Year") +
+  theme_bw() +
+  theme(axis.text = element_text(size = 15),
+        axis.title = element_text(size = 15),
+        legend.text = element_text(size = 15),
+        legend.title = element_text(size = 15),
+        legend.position = "inside",
+        legend.position.inside = c(0.1, 0.875),
+        strip.text = element_text(size = 15))
+```
+
+#### same thing but with FY25 study not averaged (30 RSP-CBR vs. only 10)
+```{r}
+cbrdata_2025 <- read_csv(file = "/Users/u4rrnkld/OneDrive - US Army Corps of Engineers/Documents/RSPtoCBR_correlation/data/cbrdata.csv") %>% 
+  mutate(station_test_cbr = station_test_CBR)
+
+rspdata_2025 <- read_csv(file = "/Users/u4rrnkld/OneDrive - US Army Corps of Engineers/Documents/RSPtoCBR_correlation/data/rspdata.csv")
+
+rspdata_2025 %>% 
+  group_by(station_test_cbr) %>% 
+  summarize(mean_rsp = mean(rsp_index)) %>% 
+  View()
+```
 
 
