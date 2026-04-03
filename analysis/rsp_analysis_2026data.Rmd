@@ -85,7 +85,7 @@ c17_segment_data <- data.frame(
 c17_segment_data$sample_id <- NA
 
 # Spaghetti Plot
-colorblind_colors2 <- c("r1" = "hotpink2", "r2" = "#009E73", "r3" = "goldenrod2") 
+colorblind_colors2 <- c("R1" = "hotpink2", "R2" = "#009E73", "R3" = "goldenrod2") 
 
 # before corrected sample names (e.g., SW_STA0 and W/E lanes)
 rsp_2026 %>% 
@@ -171,6 +171,7 @@ rsp_cbr_2026 <- rsp_mean_over_depth %>%
   select(-c(correct_lane, correct_station)) %>% 
   full_join(corrected_rsp_cbr_26, by = "correct_sample_id")
 
+#rsp
 rsp_cbr_2026 %>% 
   ggplot(aes(x = dist_ramp_end, y = mean_rsp, group = correct_lane_station, color = hours_post_construction)) +
   geom_line(linewidth = 1.25) +
@@ -183,6 +184,27 @@ rsp_cbr_2026 %>%
   facet_grid(factor(correct_lane, levels = c("SW", "SE"))~.) + 
   xlab("Distance from End (ft)") +
   ylab("RSP mean across depth (0-400mm)") +
+  labs(color = "Days Post Construction", shape = "RSP Replicate") +
+  theme_bw() +
+  theme(axis.text = element_text(size = 15),
+        axis.title = element_text(size = 15),
+        legend.text = element_text(size = 15),
+        legend.title = element_text(size = 15),
+        strip.text = element_text(size = 15))
+
+#cbr
+rsp_cbr_2026 %>% 
+  ggplot(aes(x = dist_ramp_end, y = CBR, group = correct_lane_station, color = hours_post_construction)) +
+  geom_line(linewidth = 1.25) +
+  geom_point(size = 3, aes(shape = replicate)) +
+  #geom_smooth(method = "lm", se = FALSE, linetype = "dotted") +
+  #scale_color_distiller(palette = "BrBG") +
+  scale_color_gradientn(colors = c("#082544", "#1E547D", "#79668C", "#DE3C37", "#F2DC7E")) +
+  #scale_color_continuous(values = natparks.pals("Yellowstone", 5)) +
+  scale_x_continuous(limits = c(0,40), breaks = seq(0, 35, by = 5)) +
+  facet_grid(factor(correct_lane, levels = c("SW", "SE"))~.) + 
+  xlab("Distance from End (ft)") +
+  ylab("CBR") +
   labs(color = "Days Post Construction", shape = "RSP Replicate") +
   theme_bw() +
   theme(axis.text = element_text(size = 15),
@@ -247,7 +269,7 @@ corr_lm_r2 <- summary(corr_lm)$r.squared
 
 ggplot(corr_lm, aes(x = .fitted, y = .resid)) +
   geom_point() +
-  geom_hline(yintercept = 0, color = "red", linetype = "dashed", size = 1) +
+  geom_hline(yintercept = 0, color = "red", linetype = "dashed", linewidth = 1) +
   labs(title = "Residuals vs. Fitted Values Plot (Simple Method)",
        x = "Fitted Values",
        y = "Residuals") +
@@ -353,7 +375,7 @@ ggplot(cumulative_data, aes(x = mean_rsp, y = mean_cbr)) +
 
 #### same thing but with FY25 study not averaged (30 RSP-CBR vs. only 10)
 ```{r}
-cbrdata_2025 <- read_csv(file = "/Users/u4rrnkld/OneDrive - US Army Corps of Engineers/Documents/RSPtoCBR_correlation/data/cbrdata.csv") %>% 
+cbrdata_2025 <- read_csv(file = "/Users/u4rrnkld/OneDrive - US Army Corps of Engineers/Documents/RSPtoCBR_correlation/data/cbrdata_2025_unfiltered.csv") %>% 
   mutate(station_test_cbr = station_test_CBR)
 
 rspdata_2025 <- read_csv(file = "/Users/u4rrnkld/OneDrive - US Army Corps of Engineers/Documents/RSPtoCBR_correlation/data/rspdata.csv")
